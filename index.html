@@ -590,9 +590,25 @@
 
         const startApp = async () => {
             await initAuth();
+            // Safety fallback: if Firebase never connects in 12 seconds, show an error instead of freezing forever
+            const loaderFallback = setTimeout(() => {
+                const loader = document.getElementById('global-loader');
+                if (loader && !loader.classList.contains('hidden')) {
+                    loader.innerHTML = `
+                        <div class="text-center p-8">
+                            <i class="fa-solid fa-wifi text-red-400 text-6xl mb-4"></i>
+                            <h2 class="text-2xl font-bold text-red-600 mb-2">Cloud Connection Timed Out</h2>
+                            <p class="text-gray-500 text-sm mb-6">Please check your internet connection and refresh the page.</p>
+                            <button onclick="location.reload()" class="bg-primary text-white px-6 py-3 rounded-lg font-bold hover:bg-green-800 transition shadow">
+                                <i class="fa-solid fa-rotate-right mr-2"></i> Refresh Page
+                            </button>
+                        </div>`;
+                }
+            }, 12000);
             onAuthStateChanged(auth, (user) => {
                 firebaseUser = user;
                 if (user) {
+                    clearTimeout(loaderFallback);
                     setupCloudListeners();
                     setTimeout(() => {
                         const loader = document.getElementById('global-loader');
@@ -692,6 +708,51 @@
             localStorage.setItem('islamic_citation_current_user_v9', JSON.stringify(currentUser));
             localStorage.setItem('islamic_citation_admins_v9', JSON.stringify(admins));
             localStorage.setItem('islamic_citation_format_v9', JSON.stringify(formatSettings));
+        }
+
+        // ==========================================
+        // UTILITY FUNCTIONS (Core helpers)
+        // ==========================================
+
+        // Generates a unique ID for new books and sessions
+        function generateId() {
+            return 'book_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        }
+
+        // Converts Western/English digits (1,2,3) to Arabic-Indic numerals (١,٢,٣)
+        function toArabicDigits(str) {
+            if (!str) return str;
+            const map = { '0':'٠','1':'١','2':'٢','3':'٣','4':'٤','5':'٥','6':'٦','7':'٧','8':'٨','9':'٩' };
+            return String(str).replace(/[0-9]/g, d => map[d]);
+        }
+
+        // Displays a brief notification message at the bottom of the screen
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            if (!container) return;
+            const toast = document.createElement('div');
+            const icon = type === 'error' ? 'circle-xmark' : type === 'info' ? 'circle-info' : 'circle-check';
+            const color = type === 'error' ? 'bg-red-600' : type === 'info' ? 'bg-blue-600' : 'bg-green-700';
+            toast.className = `toast ${color} text-white px-5 py-3 rounded-lg shadow-xl font-semibold text-sm flex items-center gap-2 pointer-events-auto`;
+            toast.innerHTML = `<i class="fa-solid fa-${icon}"></i> <span>${message}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => { if (toast.parentNode) toast.remove(); }, 3200);
+        }
+
+        // Populates the book dropdown in the Citation Builder with all books from the library
+        function renderBookSelect() {
+            const select = document.getElementById('book-select');
+            if (!select) return;
+            const currentVal = select.value;
+            select.innerHTML = '<option value="">-- اختر الكتاب / Select a Book --</option>';
+            const sorted = [...books].sort((a, b) => (a.title || '').localeCompare(b.title || ''));
+            sorted.forEach(book => {
+                const opt = document.createElement('option');
+                opt.value = book.id;
+                opt.textContent = book.title || '(Untitled)';
+                if (book.id === currentVal) opt.selected = true;
+                select.appendChild(opt);
+            });
         }
 
         // ==========================================
@@ -1411,6 +1472,9 @@
                 let importedCount = 0, skippedCount = 0;
                 document.getElementById('cloud-syncing').classList.remove('hidden');
 
+                // Build a lookup Set for instant duplicate detection — much faster than searching the full array each time
+                const existingKeys = new Set(books.map(b => `${b.title}|${b.publisher}|${b.edition}`));
+
                 // Using Batch writes to completely prevent freezing
                 let batch = writeBatch(db);
                 let opCount = 0;
@@ -1418,34 +1482,35 @@
                 for (let i = 1; i < lines.length; i++) {
                     if (!lines[i].trim()) continue;
                     const values = parseLine(lines[i]);
-                    
-                    const getVal = (name) => { 
-                        const idx = headers.findIndex(h => h && h.toLowerCase().includes(name.toLowerCase())); 
-                        return idx !== -1 && values[idx] ? values[idx] : ''; 
+
+                    const getVal = (name) => {
+                        const idx = headers.findIndex(h => h && h.toLowerCase().includes(name.toLowerCase()));
+                        return idx !== -1 && values[idx] ? values[idx] : '';
                     };
 
                     const title = getVal('Title');
                     if (!title) continue;
-                    
+
                     const publisher = getVal('Publisher');
                     const edition = getVal('Edition');
 
-                    if (books.some(b => b.title === title && b.publisher === publisher && b.edition === edition)) {
-                        skippedCount++; continue; 
+                    // Fast O(1) duplicate check using the Set built above
+                    if (existingKeys.has(`${title}|${publisher}|${edition}`)) {
+                        skippedCount++; continue;
                     }
 
                     const newId = generateId();
                     const bookData = {
-                        id: newId, 
-                        title: title, 
-                        authorName: getVal('Author'), 
-                        deathYear: getVal('Death Year'), 
+                        id: newId,
+                        title: title,
+                        authorName: getVal('Author'),
+                        deathYear: getVal('Death Year'),
                         publisher: publisher,
-                        place: getVal('Place'), 
-                        edition: edition, 
+                        place: getVal('Place'),
+                        edition: edition,
                         pubYear: getVal('Publication Year')
                     };
-                    
+
                     const bookRef = doc(db, 'artifacts', appId, 'public', 'data', 'books', newId);
                     batch.set(bookRef, bookData);
                     importedCount++;
@@ -1457,8 +1522,13 @@
                         batch = writeBatch(db);
                         opCount = 0;
                     }
+
+                    // Yield to the browser every 20 rows so the UI stays responsive and doesn't freeze
+                    if (i % 20 === 0) {
+                        await new Promise(resolve => setTimeout(resolve, 0));
+                    }
                 }
-                
+
                 // Commit any remaining operations
                 if (opCount > 0) {
                     await batch.commit();
