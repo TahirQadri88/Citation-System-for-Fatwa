@@ -1,0 +1,42 @@
+{
+  "name": "Masaadir — by Abul Laith",
+  "short_name": "Masaadir",
+  "description": "Fatwa Citation Engine — Islamic Text Reference Manager with cloud-synced bibliography sessions",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#1a4a1a",
+  "theme_color": "#1a4a1a",
+  "lang": "ar",
+  "dir": "rtl",
+  "categories": ["education", "productivity"],
+  "icons": [
+    {
+      "src": "/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Citation Builder",
+      "short_name": "Citation",
+      "url": "/?tab=citation",
+      "description": "Generate a new citation"
+    },
+    {
+      "name": "Library Database",
+      "short_name": "Library",
+      "url": "/?tab=database",
+      "description": "Browse the Islamic text library"
+    }
+  ]
+}
