@@ -3,7 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Islamic Texts Citation Engine</title>
+    <title>Masaadir — by Abul Laith</title>
+
+    <!-- PWA: Installable App -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#1a4a1a">
+    <meta name="application-name" content="Masaadir">
+    <meta name="description" content="Fatwa Citation Engine — Islamic Text Reference Manager by Abul Laith">
+
+    <!-- iOS PWA support -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Masaadir">
+    <link rel="apple-touch-icon" href="/icons/icon.svg">
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- FontAwesome -->
@@ -88,8 +100,8 @@
             <h1 class="text-xl md:text-2xl font-bold flex items-center gap-3 cursor-pointer" onclick="window.switchTab('home')">
                 <div class="bg-gold text-white p-2 rounded-lg shadow-inner"><i class="fa-solid fa-book-open-reader"></i></div>
                 <div>
-                    <div>Fatwa Citation Engine</div>
-                    <div class="text-xs font-normal text-gold-light mt-0.5">By Abul-Laith Muhammad Tahir Qadri</div>
+                    <div>Masaadir — مصادر</div>
+                    <div class="text-xs font-normal text-gold-light mt-0.5">By Abul Laith Muhammad Tahir Qadri</div>
                 </div>
             </h1>
             <div class="flex items-center gap-4 bg-green-900/50 px-4 py-2 rounded-full border border-green-800">
@@ -1784,6 +1796,16 @@
         window.registerUser = registerUser;
         window.logoutRegularUser = logoutRegularUser;
 
+    </script>
+
+    <!-- PWA Service Worker Registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .catch(err => console.warn('SW registration failed:', err));
+            });
+        }
     </script>
 </body>
 </html>
