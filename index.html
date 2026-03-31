@@ -78,7 +78,7 @@
         <i class="fa-solid fa-book-open-reader text-gold text-6xl mb-4 animate-bounce"></i>
         <h2 class="text-2xl font-bold text-primary mb-2">Fatwa Citation Engine</h2>
         <div class="flex items-center gap-2 text-gray-600 font-medium">
-            <div class="loader"></div> Connecting to Secure Cloud...
+            <div class="loader"></div> <span class="loader-msg">Connecting to Secure Cloud...</span>
         </div>
     </div>
 
@@ -584,39 +584,71 @@
                 }
             } catch (err) {
                 console.error("Auth Error", err);
-                document.getElementById('global-loader').innerHTML = `<p class="text-red-600 font-bold">Cloud Connection Failed.</p>`;
+                // Show an immediate, actionable error — do not leave user stuck on a spinner
+                const loader = document.getElementById('global-loader');
+                if (loader) {
+                    loader.innerHTML = `
+                        <div class="text-center p-8">
+                            <i class="fa-solid fa-cloud-slash text-red-400 text-6xl mb-4"></i>
+                            <h2 class="text-2xl font-bold text-red-600 mb-2">Cloud Connection Failed</h2>
+                            <p class="text-gray-500 text-sm mb-6">Could not connect to the secure cloud. Check your internet and try again.</p>
+                            <button onclick="location.reload()" class="bg-red-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-red-700 transition shadow">
+                                <i class="fa-solid fa-rotate-right mr-2"></i> Retry
+                            </button>
+                        </div>`;
+                }
+            }
+        };
+
+        // Guard flag — prevents duplicate onSnapshot listeners if onAuthStateChanged fires more than once
+        // (Firebase fires this callback again on token refresh, network reconnect, etc.)
+        let listenersSetup = false;
+
+        const showLoader = (msg) => {
+            const loader = document.getElementById('global-loader');
+            if (loader) {
+                const el = loader.querySelector('.loader-msg');
+                if (el) el.textContent = msg;
+            }
+        };
+
+        const hideLoader = () => {
+            const loader = document.getElementById('global-loader');
+            if (loader && !loader.classList.contains('hidden')) {
+                loader.style.opacity = "0";
+                setTimeout(() => loader.classList.add('hidden'), 500);
             }
         };
 
         const startApp = async () => {
-            await initAuth();
-            // Safety fallback: if Firebase never connects in 12 seconds, show an error instead of freezing forever
+            // Safety fallback: if Firebase never responds in 15 seconds, show error instead of freezing forever
             const loaderFallback = setTimeout(() => {
                 const loader = document.getElementById('global-loader');
                 if (loader && !loader.classList.contains('hidden')) {
                     loader.innerHTML = `
                         <div class="text-center p-8">
                             <i class="fa-solid fa-wifi text-red-400 text-6xl mb-4"></i>
-                            <h2 class="text-2xl font-bold text-red-600 mb-2">Cloud Connection Timed Out</h2>
-                            <p class="text-gray-500 text-sm mb-6">Please check your internet connection and refresh the page.</p>
+                            <h2 class="text-2xl font-bold text-red-600 mb-2">Connection Timed Out</h2>
+                            <p class="text-gray-500 text-sm mb-6">The cloud is taking too long to respond. Check your internet and refresh.</p>
                             <button onclick="location.reload()" class="bg-primary text-white px-6 py-3 rounded-lg font-bold hover:bg-green-800 transition shadow">
                                 <i class="fa-solid fa-rotate-right mr-2"></i> Refresh Page
                             </button>
                         </div>`;
                 }
-            }, 12000);
+            }, 15000);
+
+            await initAuth();
+
             onAuthStateChanged(auth, (user) => {
                 firebaseUser = user;
-                if (user) {
+                // CRITICAL: Only call setupCloudListeners ONCE — Firebase can fire this callback
+                // multiple times (token refresh, reconnect) which would create duplicate listeners
+                // causing exponentially more renders and eventual browser freeze
+                if (user && !listenersSetup) {
+                    listenersSetup = true;
                     clearTimeout(loaderFallback);
                     setupCloudListeners();
-                    setTimeout(() => {
-                        const loader = document.getElementById('global-loader');
-                        if (loader) {
-                            loader.style.opacity = "0";
-                            setTimeout(() => loader.classList.add('hidden'), 500);
-                        }
-                    }, 1000);
+                    // Loader is now hidden by setupCloudListeners when first data arrives
                 }
             });
         };
@@ -627,39 +659,55 @@
         // ==========================================
         const setupCloudListeners = () => {
             if (!firebaseUser) return;
-            
+
+            // Hide the loader when books first arrive — this ensures the loader stays
+            // visible until we actually have data, not just until an arbitrary timer fires
+            let firstBooksLoad = true;
+
             const booksRef = collection(db, 'artifacts', appId, 'public', 'data', 'books');
             onSnapshot(booksRef, (snapshot) => {
                 books = [];
                 snapshot.forEach(docSnap => books.push({ id: docSnap.id, ...docSnap.data() }));
                 renderBookSelect();
                 renderDatabaseTable();
-            }, (error) => console.error(error));
+                // Hide loader on first successful data load
+                if (firstBooksLoad) {
+                    firstBooksLoad = false;
+                    hideLoader();
+                }
+            }, (error) => {
+                console.error("Books listener error:", error);
+                // Still hide loader so app isn't stuck even if books fail to load
+                if (firstBooksLoad) {
+                    firstBooksLoad = false;
+                    hideLoader();
+                }
+            });
 
             const usersRef = collection(db, 'artifacts', appId, 'public', 'data', 'app_users');
             onSnapshot(usersRef, (snapshot) => {
                 allAppUsers = [];
                 snapshot.forEach(docSnap => allAppUsers.push(docSnap.data()));
                 if(isAdminLoggedIn) renderAdminSessions();
-            }, (error) => console.error(error));
+            }, (error) => console.error("Users listener error:", error));
 
             const sessionsRef = collection(db, 'artifacts', appId, 'public', 'data', 'app_sessions');
             onSnapshot(sessionsRef, (snapshot) => {
                 allAppSessions = [];
                 snapshot.forEach(docSnap => allAppSessions.push(docSnap.data()));
-                
+
                 if(currentUser) {
                     const myCloudSessions = allAppSessions.filter(s => s.userCell === currentUser.cell);
                     if(myCloudSessions.length === 0 && currentSessionId) {
-                        currentSessionId = null; 
+                        currentSessionId = null;
                     } else if (currentSessionId && !myCloudSessions.find(s => s.id === currentSessionId)) {
-                        currentSessionId = myCloudSessions[0].id; 
+                        currentSessionId = myCloudSessions[0].id;
                     }
                     renderSessionSelect();
                     renderBibliography();
                 }
                 if(isAdminLoggedIn) renderAdminSessions();
-            }, (error) => console.error(error));
+            }, (error) => console.error("Sessions listener error:", error));
         };
 
         // ==========================================
