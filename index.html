@@ -558,17 +558,25 @@
     <!-- ========================================== -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // ==========================================
         // FIREBASE INITIALIZATION & AUTHENTICATION
         // ==========================================
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+        const firebaseConfig = {
+            apiKey: "AIzaSyBrfZuU5Yw67RiM8KN7KKovR2Juk0EawNU",
+            authDomain: "masaadirapp.firebaseapp.com",
+            projectId: "masaadirapp",
+            storageBucket: "masaadirapp.firebasestorage.app",
+            messagingSenderId: "641233432838",
+            appId: "1:641233432838:web:79242ddebe5f5b4387ee87",
+            measurementId: "G-971QVH5X6P"
+        };
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const appId = 'masaadirapp'; // Firestore collection path identifier
 
         let firebaseUser = null;
         let books = [];
@@ -577,11 +585,7 @@
         
         const initAuth = async () => {
             try {
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                } else {
-                    await signInAnonymously(auth);
-                }
+                await signInAnonymously(auth);
             } catch (err) {
                 console.error("Auth Error", err);
                 // Show an immediate, actionable error — do not leave user stuck on a spinner
