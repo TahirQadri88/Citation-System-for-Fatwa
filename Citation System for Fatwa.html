@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Islamic Texts Citation Engine</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Noto+Nastaliq+Urdu:wght@400;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        parchment: '#fdfbf7',
+                        ink: '#2b2216',
+                        gold: '#b8860b',
+                        'gold-light': '#dfb95c',
+                        primary: '#1a4a1a',
+                        secondary: '#8b1a1a'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        arabic: ['Amiri', 'serif'],
+                        urdu: ['"Noto Nastaliq Urdu"', 'serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background-color: #fdfbf7; color: #2b2216; }
+        .font-urdu { font-family: 'Noto Nastaliq Urdu', serif; line-height: 2.2; }
+        .font-arabic { font-family: 'Amiri', serif; font-size: 1.25rem; line-height: 1.8; }
+        
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #c9a84c; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #b8860b; }
+
+        .tab-active { border-bottom: 3px solid #1a4a1a; color: #1a4a1a; font-weight: 600; }
+        .tab-inactive { border-bottom: 3px solid transparent; color: #e5e7eb; }
+        
+        @keyframes fadeOut {
+            0% { opacity: 1; transform: translateY(0); }
+            80% { opacity: 1; transform: translateY(0); }
+            100% { opacity: 0; transform: translateY(-20px); }
+        }
+        .toast { animation: fadeOut 3s forwards; }
+        
+        /* Ensure inputs look correct for RTL languages even in LTR layout */
+        .rtl-input { direction: rtl; text-align: right; font-family: 'Amiri', serif; font-size: 1.1rem; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col font-sans">
+
+    <!-- Header -->
+    <header class="bg-primary text-white shadow-md z-10 relative">
+        <div class="container mx-auto px-4 py-4 flex flex-col md:flex-row justify-between items-center gap-4">
+            <h1 class="text-xl md:text-2xl font-bold flex items-center gap-2">
+                <i class="fa-solid fa-book-open-reader text-gold"></i> Fatwa Citation Engine
+            </h1>
+            <div class="flex gap-2 md:gap-4">
+                <button onclick="exportData()" class="bg-gold hover:bg-yellow-600 text-white px-4 py-2 rounded text-sm transition shadow font-medium">
+                    <i class="fa-solid fa-download mr-1"></i> Backup Database
+                </button>
+            </div>
+        </div>
+        <!-- Tabs -->
+        <div class="container mx-auto px-4 flex gap-2 md:gap-6 text-sm md:text-base bg-primary text-white border-t border-green-800 overflow-x-auto whitespace-nowrap">
+            <button onclick="switchTab('citation')" id="tab-citation" class="py-3 px-4 tab-active bg-white text-primary rounded-t-lg transition-colors">
+                <i class="fa-solid fa-feather-pointed mr-1"></i> Citation Builder
+            </button>
+            <button onclick="switchTab('database')" id="tab-database" class="py-3 px-4 tab-inactive hover:bg-green-800 rounded-t-lg transition-colors">
+                <i class="fa-solid fa-database mr-1"></i> Library (Database)
+            </button>
+            <button onclick="switchTab('bibliography')" id="tab-bibliography" class="py-3 px-4 tab-inactive hover:bg-green-800 rounded-t-lg transition-colors">
+                <i class="fa-solid fa-list-ol mr-1"></i> Bibliography
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-grow container mx-auto px-4 py-8 relative">
+
+        <!-- ==================== TAB 1: CITATION BUILDER ==================== -->
+        <div id="view-citation" class="block">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- Book Selection & Dynamic Form -->
+                <div class="lg:col-span-1 bg-white p-6 rounded-lg shadow border border-gray-200">
+                    <h2 class="text-lg font-bold mb-4 text-primary border-b pb-2">Current Fatwa Details</h2>
+                    
+                    <div class="mb-5">
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">Select Book</label>
+                        <select id="book-select" class="w-full border rounded p-2 rtl-input bg-gray-50 focus:ring-2 focus:ring-primary focus:outline-none">
+                            <option value="">-- Select Book --</option>
+                            <!-- Populated via JS -->
+                        </select>
+                    </div>
+
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">Kitab (كتاب)</label>
+                            <input type="text" id="dyn-kitab" placeholder="مثال: كتاب الصلاة" class="w-full border rounded p-2 rtl-input focus:ring-2 focus:ring-primary">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">Bab / Fasl (باب / فصل)</label>
+                            <input type="text" id="dyn-bab" placeholder="مثال: باب الإمامة" class="w-full border rounded p-2 rtl-input focus:ring-2 focus:ring-primary">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">Tahta Qawlihi / Ayah (تحت قوله)</label>
+                            <input type="text" id="dyn-tahta" placeholder="مثال: تحت الآية: إنما يعمر..." class="w-full border rounded p-2 rtl-input focus:ring-2 focus:ring-primary">
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-1">Volume (الجزء)</label>
+                                <input type="text" id="dyn-vol" placeholder="1" class="w-full border rounded p-2 rtl-input text-center focus:ring-2 focus:ring-primary">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-1">Page (الصفحة)</label>
+                                <input type="text" id="dyn-page" placeholder="59" class="w-full border rounded p-2 rtl-input text-center focus:ring-2 focus:ring-primary">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">Hadith/Mas'alah No. (رقم)</label>
+                            <input type="text" id="dyn-hadith" placeholder="450" class="w-full border rounded p-2 rtl-input text-center focus:ring-2 focus:ring-primary">
+                        </div>
+                    </div>
+
+                    <div class="mt-6 flex gap-2">
+                        <button onclick="generateCitation()" class="flex-grow bg-gold hover:bg-yellow-600 text-white font-bold py-3 px-4 rounded transition shadow text-base">
+                            <i class="fa-solid fa-wand-magic-sparkles mr-2"></i> Generate
+                        </button>
+                        <button onclick="clearCitationFields()" class="bg-gray-200 hover:bg-gray-300 text-gray-700 py-3 px-4 rounded transition shadow" title="Clear input fields">
+                            <i class="fa-solid fa-eraser"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Output Display -->
+                <div class="lg:col-span-2">
+                    <div class="bg-white p-6 rounded-lg shadow border border-gray-200 h-full flex flex-col">
+                        <div class="flex justify-between items-center mb-4 border-b pb-2">
+                            <h2 class="text-lg font-bold text-primary">Citation Output</h2>
+                            <button onclick="copyCitation('both')" class="bg-primary hover:bg-green-800 text-white px-3 py-1.5 rounded text-sm transition shadow font-medium">
+                                <i class="fa-regular fa-copy mr-1"></i> Copy Full Citation
+                            </button>
+                        </div>
+                        
+                        <div id="citation-container" class="flex-grow flex flex-col gap-4 hidden">
+                            
+                            <!-- Urdu Intro Block -->
+                            <div class="bg-parchment p-5 rounded border border-gray-300 shadow-sm relative group transition-all hover:border-gold">
+                                <div class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <button onclick="copyCitation('intro')" class="text-gray-600 hover:text-primary bg-white px-2 py-1 rounded shadow text-xs font-medium border">
+                                        <i class="fa-regular fa-copy mr-1"></i> Copy Intro
+                                    </button>
+                                </div>
+                                <p class="text-xs text-gray-400 mb-2 uppercase font-semibold tracking-wider">Urdu Intro (مقدمة)</p>
+                                <div id="out-intro" class="text-xl font-urdu text-secondary leading-loose" dir="rtl"></div>
+                            </div>
+
+                            <!-- Arabic Citation Block -->
+                            <div class="bg-white p-5 rounded border border-gold-light shadow-sm relative group transition-all hover:border-gold">
+                                <div class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <button onclick="copyCitation('arabic')" class="text-gray-600 hover:text-primary bg-white px-2 py-1 rounded shadow text-xs font-medium border">
+                                        <i class="fa-regular fa-copy mr-1"></i> Copy Reference
+                                    </button>
+                                </div>
+                                <p class="text-xs text-gray-400 mb-2 uppercase font-semibold tracking-wider">Arabic Reference (المرجع)</p>
+                                <div id="out-arabic" class="text-2xl font-arabic font-bold text-primary leading-loose" dir="rtl"></div>
+                            </div>
+
+                        </div>
+
+                        <div id="citation-placeholder" class="flex-grow flex items-center justify-center text-gray-400 text-sm bg-gray-50 rounded border border-dashed border-gray-300 min-h-[250px]">
+                            Generated citation will appear here...
+                        </div>
+
+                        <div class="mt-4 text-xs text-gray-500 flex items-center">
+                            <i class="fa-solid fa-circle-info mr-2 text-gold"></i> English numbers (1, 2, 3) are automatically converted to Arabic digits (١, ٢, ٣).
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== TAB 2: DATABASE ==================== -->
+        <div id="view-database" class="hidden">
+            <div class="bg-white p-6 rounded-lg shadow border border-gray-200">
+                <div class="flex flex-col md:flex-row justify-between items-center mb-6 border-b pb-4 gap-4">
+                    <h2 class="text-xl font-bold text-primary">Library Management</h2>
+                    <div class="flex flex-wrap justify-end gap-2">
+                        <button onclick="removeExactDuplicates()" class="bg-gray-100 hover:bg-gray-200 border border-gray-300 text-gray-700 px-3 py-1.5 rounded transition shadow-sm text-sm font-medium">
+                            <i class="fa-solid fa-broom mr-1"></i> Clean Duplicates
+                        </button>
+                        <label class="bg-gold hover:bg-yellow-600 text-white px-3 py-1.5 rounded cursor-pointer transition shadow-sm text-sm font-medium">
+                            <i class="fa-solid fa-file-csv mr-1"></i> Import CSV
+                            <input type="file" id="csv-upload" accept=".csv" class="hidden" onchange="importCSV(event)">
+                        </label>
+                        <button onclick="openBookModal()" class="bg-primary hover:bg-green-800 text-white px-3 py-1.5 rounded transition shadow-sm text-sm font-medium">
+                            <i class="fa-solid fa-plus mr-1"></i> Add Book
+                        </button>
+                        <button onclick="clearAllData()" class="bg-red-50 hover:bg-red-100 border border-red-200 text-red-700 px-3 py-1.5 rounded transition shadow-sm text-sm font-medium">
+                            <i class="fa-solid fa-trash-can mr-1"></i> Delete All
+                        </button>
+                    </div>
+                </div>
+
+                <div class="mb-4 relative">
+                    <i class="fa-solid fa-search absolute left-3 top-3.5 text-gray-400"></i>
+                    <input type="text" id="search-db" onkeyup="renderDatabaseTable()" placeholder="Search by book or author name..." class="w-full border rounded-md py-2.5 pl-10 pr-3 bg-gray-50 focus:ring-2 focus:ring-primary outline-none">
+                </div>
+
+                <div class="overflow-x-auto rounded-md border border-gray-200">
+                    <table class="w-full text-left whitespace-nowrap">
+                        <thead class="bg-gray-100 border-b text-gray-600 text-sm">
+                            <tr>
+                                <th class="p-3 font-semibold">Book Title</th>
+                                <th class="p-3 font-semibold">Full Author Name</th>
+                                <th class="p-3 font-semibold">Publisher</th>
+                                <th class="p-3 font-semibold">Edition / Year</th>
+                                <th class="p-3 text-center font-semibold w-24">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="db-table-body" class="divide-y text-sm">
+                            <!-- Table rows via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== TAB 3: BIBLIOGRAPHY ==================== -->
+        <div id="view-bibliography" class="hidden">
+            <div class="bg-white p-6 rounded-lg shadow border border-gray-200 min-h-[500px]">
+                <div class="flex justify-between items-center mb-4 border-b pb-2">
+                    <h2 class="text-xl font-bold text-primary">Current Bibliography</h2>
+                    <div class="flex gap-2">
+                        <button onclick="clearBibliography()" class="text-red-600 hover:text-red-800 transition px-3 py-1.5 border border-red-200 rounded text-sm bg-red-50 font-medium">
+                            <i class="fa-solid fa-eraser mr-1"></i> Clear List
+                        </button>
+                        <button onclick="copyBibliography()" class="bg-gold hover:bg-yellow-600 text-white px-4 py-1.5 rounded transition shadow font-medium text-sm">
+                            <i class="fa-solid fa-copy mr-1"></i> Copy All
+                        </button>
+                    </div>
+                </div>
+                
+                <p class="text-gray-500 text-sm mb-4">Books are automatically added to this list when you generate a citation. The list is sorted alphabetically.</p>
+
+                <div id="bibliography-output" class="bg-parchment p-6 rounded border border-gold-light text-lg font-urdu shadow-inner min-h-[300px] leading-loose space-y-4" dir="rtl">
+                    <!-- Output appears here -->
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Modal: Add/Edit Book -->
+    <div id="book-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div class="p-5 border-b flex justify-between items-center bg-gray-50 rounded-t-lg">
+                <h3 id="modal-title" class="text-lg font-bold text-primary">Add / Edit Book</h3>
+                <button onclick="closeBookModal()" class="text-gray-400 hover:text-red-500 transition"><i class="fa-solid fa-xmark text-xl"></i></button>
+            </div>
+            <div class="p-6 space-y-5">
+                <input type="hidden" id="edit-id">
+                
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">Book Title *</label>
+                    <input type="text" id="edit-title" class="w-full border rounded p-2 focus:ring-primary rtl-input" placeholder="اسم الكتاب">
+                </div>
+
+                <div class="bg-blue-50 p-4 rounded border border-blue-100">
+                    <h4 class="font-bold text-blue-800 border-b border-blue-200 pb-1 mb-2">Author Details</h4>
+                    <p class="text-xs text-gray-600 mb-3">Add exact titles (Allama, Imam) and Madhab (Hanafi) to the full name below.</p>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="md:col-span-2">
+                            <label class="block text-xs font-semibold text-gray-700 mb-1">Full Author Name</label>
+                            <input type="text" id="edit-authorname" placeholder="مثال: علامہ زین الدین بن ابراہیم ابن نجیم حنفی" class="w-full border rounded p-2 text-sm rtl-input">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1">Death Year (AH/CE)</label>
+                            <input type="text" id="edit-deathyear" placeholder="970ھ" class="w-full border rounded p-2 text-sm rtl-input">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">Publisher (المطبعة)</label>
+                        <input type="text" id="edit-publisher" placeholder="دار الكتب العلمية" class="w-full border rounded p-2 rtl-input">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">Place (مكان الطبع)</label>
+                        <input type="text" id="edit-place" placeholder="بيروت" class="w-full border rounded p-2 rtl-input">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">Edition (الطبعة)</label>
+                        <input type="text" id="edit-edition" placeholder="الطبعة الأولى" class="w-full border rounded p-2 rtl-input">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">Pub Year (سنة الطبع)</label>
+                        <input type="text" id="edit-pubyear" placeholder="1413هـ" class="w-full border rounded p-2 rtl-input">
+                    </div>
+                </div>
+            </div>
+            <div class="p-5 border-t bg-gray-50 flex justify-end gap-3 rounded-b-lg">
+                <button onclick="closeBookModal()" class="px-4 py-2 border rounded text-gray-600 hover:bg-gray-100 font-medium transition">Cancel</button>
+                <button onclick="saveBook()" class="px-6 py-2 bg-primary text-white rounded hover:bg-green-800 font-medium transition shadow">Save Book</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="fixed bottom-5 left-1/2 transform -translate-x-1/2 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+    <script>
+        // ==========================================
+        // STATE MANAGEMENT (V5)
+        // ==========================================
+        let books = [];
+        let usedReferences = [];
+        let textIntroRaw = "";
+        let textArabicRaw = "";
+
+        // ==========================================
+        // INITIALIZATION
+        // ==========================================
+        document.addEventListener('DOMContentLoaded', () => {
+            loadData();
+            renderBookSelect();
+            renderDatabaseTable();
+            renderBibliography();
+        });
+
+        function loadData() {
+            const storedBooks = localStorage.getItem('islamic_citation_books_v5');
+            const storedRefs = localStorage.getItem('islamic_citation_refs_v5');
+            if (storedBooks) books = JSON.parse(storedBooks);
+            if (storedRefs) usedReferences = JSON.parse(storedRefs);
+        }
+
+        function saveData() {
+            localStorage.setItem('islamic_citation_books_v5', JSON.stringify(books));
+            localStorage.setItem('islamic_citation_refs_v5', JSON.stringify(usedReferences));
+            renderBookSelect();
+            renderDatabaseTable();
+        }
+
+        // ==========================================
+        // UTILITIES
+        // ==========================================
+        function generateId() {
+            return 'book_' + Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+        }
+
+        function toArabicDigits(str) {
+            if (!str) return '';
+            const arabicNumbers = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
+            return str.replace(/[0-9]/g, function(w) { return arabicNumbers[+w]; });
+        }
+
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            const bgColor = type === 'success' ? 'bg-green-600' : (type === 'error' ? 'bg-red-600' : 'bg-gray-700');
+            toast.className = `${bgColor} text-white px-5 py-3 rounded shadow-lg flex items-center gap-3 toast pointer-events-auto text-sm font-medium`;
+            toast.innerHTML = `<i class="fa-solid ${type === 'success' ? 'fa-check-circle' : 'fa-circle-info'} text-lg"></i> <span>${message}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => { toast.remove(); }, 3000);
+        }
+
+        function switchTab(tabName) {
+            document.getElementById('view-citation').classList.add('hidden');
+            document.getElementById('view-database').classList.add('hidden');
+            document.getElementById('view-bibliography').classList.add('hidden');
+            
+            document.querySelectorAll('header button[id^="tab-"]').forEach(btn => {
+                btn.classList.remove('tab-active', 'bg-white', 'text-primary');
+                btn.classList.add('tab-inactive', 'text-white');
+            });
+
+            document.getElementById(`view-${tabName}`).classList.remove('hidden');
+            
+            const activeTabBtn = document.getElementById(`tab-${tabName}`);
+            activeTabBtn.classList.remove('tab-inactive', 'text-white');
+            activeTabBtn.classList.add('tab-active', 'bg-white', 'text-primary');
+        }
+
+        // ==========================================
+        // DATABASE FUNCTIONS (TAB 2)
+        // ==========================================
+        function renderDatabaseTable() {
+            const tbody = document.getElementById('db-table-body');
+            const searchInput = document.getElementById('search-db');
+            const searchTerm = searchInput ? searchInput.value.toLowerCase() : '';
+            
+            tbody.innerHTML = '';
+            
+            const filteredBooks = books.filter(b => 
+                (b.title && b.title.toLowerCase().includes(searchTerm)) || 
+                (b.authorName && b.authorName.toLowerCase().includes(searchTerm)) ||
+                (b.publisher && b.publisher.toLowerCase().includes(searchTerm))
+            );
+
+            // Sort alphabetically for the table
+            filteredBooks.sort((a, b) => a.title.localeCompare(b.title));
+
+            filteredBooks.forEach(book => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-gray-50 border-b";
+                
+                const editionYearStr = [book.edition, book.pubYear].filter(Boolean).join(' - ') || '-';
+
+                tr.innerHTML = `
+                    <td class="p-3 font-semibold text-primary font-arabic text-right rtl-input" dir="rtl">${book.title || '-'}</td>
+                    <td class="p-3 text-sm text-gray-700 font-arabic text-right rtl-input" dir="rtl">${book.authorName || '-'}</td>
+                    <td class="p-3 text-sm text-gray-600 font-arabic text-right rtl-input" dir="rtl">${book.publisher || '-'}</td>
+                    <td class="p-3 text-sm text-gray-500 font-arabic text-right rtl-input" dir="rtl">${editionYearStr}</td>
+                    <td class="p-3 text-center flex gap-1 justify-center">
+                        <button onclick="editBook('${book.id}')" class="text-blue-600 bg-blue-50 hover:bg-blue-200 p-2 rounded transition" title="Edit"><i class="fa-solid fa-pen"></i></button>
+                        <button onclick="deleteBook('${book.id}')" class="text-red-600 bg-red-50 hover:bg-red-200 p-2 rounded transition" title="Delete"><i class="fa-solid fa-trash"></i></button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+            
+            if (filteredBooks.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-gray-400">No books found in the library.</td></tr>`;
+            }
+        }
+
+        function importCSV(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const text = e.target.result;
+                const lines = text.split('\n');
+                if (lines.length < 2) return;
+
+                const parseLine = (line) => {
+                    const result = [];
+                    let inQuotes = false;
+                    let current = '';
+                    for (let i = 0; i < line.length; i++) {
+                        const char = line[i];
+                        if (char === '"' && line[i+1] === '"') { current += '"'; i++; } 
+                        else if (char === '"') { inQuotes = !inQuotes; }
+                        else if (char === ',' && !inQuotes) { result.push(current); current = ''; }
+                        else { current += char; }
+                    }
+                    result.push(current);
+                    return result.map(s => s.trim());
+                };
+
+                const headers = parseLine(lines[0]);
+                let importedCount = 0;
+                let skippedCount = 0;
+
+                for (let i = 1; i < lines.length; i++) {
+                    if (!lines[i].trim()) continue;
+                    const values = parseLine(lines[i]);
+                    
+                    const getVal = (headerName) => {
+                        const idx = headers.findIndex(h => h.includes(headerName));
+                        return idx !== -1 && values[idx] ? values[idx] : '';
+                    };
+
+                    const title = getVal('Title');
+                    if (!title) continue;
+                    
+                    const authorName = getVal('Author');
+                    const publisher = getVal('Publisher');
+                    const edition = getVal('Edition');
+                    const pubYear = getVal('Publication Year (AH/CE)');
+
+                    // STRICT DUPLICATE CHECK
+                    const exists = books.some(b => 
+                        b.title === title && 
+                        b.publisher === publisher &&
+                        b.edition === edition
+                    );
+                    
+                    if (exists) {
+                        skippedCount++;
+                        continue; 
+                    }
+
+                    const newBook = {
+                        id: generateId(),
+                        title: title,
+                        authorName: authorName, 
+                        deathYear: getVal('Death Year (AH)'),
+                        publisher: publisher,
+                        place: getVal('Place'),
+                        edition: edition,
+                        pubYear: pubYear
+                    };
+                    books.push(newBook);
+                    importedCount++;
+                }
+
+                saveData();
+                let msg = `Imported ${importedCount} new books.`;
+                if(skippedCount > 0) msg += ` (Skipped ${skippedCount} exact duplicates)`;
+                showToast(msg);
+                event.target.value = ''; 
+            };
+            reader.readAsText(file, 'utf-8');
+        }
+
+        function removeExactDuplicates() {
+            const uniqueBooks = [];
+            const seenSignatures = new Set();
+            let removedCount = 0;
+
+            books.forEach(book => {
+                const signature = `${book.title}|${book.authorName}|${book.publisher}|${book.edition}`.toLowerCase().trim();
+                
+                if (seenSignatures.has(signature)) {
+                    removedCount++;
+                } else {
+                    seenSignatures.add(signature);
+                    uniqueBooks.push(book);
+                }
+            });
+
+            if (removedCount > 0) {
+                books = uniqueBooks;
+                saveData();
+                showToast(`Cleaned ${removedCount} exact duplicate copies successfully.`);
+            } else {
+                showToast('Library is clean! No exact duplicates found.', 'info');
+            }
+        }
+
+        function openBookModal() {
+            document.getElementById('edit-id').value = '';
+            document.getElementById('edit-title').value = '';
+            document.getElementById('edit-authorname').value = '';
+            document.getElementById('edit-deathyear').value = '';
+            document.getElementById('edit-publisher').value = '';
+            document.getElementById('edit-place').value = '';
+            document.getElementById('edit-edition').value = '';
+            document.getElementById('edit-pubyear').value = '';
+            
+            document.getElementById('modal-title').innerText = 'Add New Book';
+            document.getElementById('book-modal').classList.remove('hidden');
+            document.getElementById('book-modal').classList.add('flex');
+        }
+
+        function closeBookModal() {
+            document.getElementById('book-modal').classList.add('hidden');
+            document.getElementById('book-modal').classList.remove('flex');
+        }
+
+        function editBook(id) {
+            const book = books.find(b => b.id === id);
+            if (!book) return;
+
+            document.getElementById('edit-id').value = book.id;
+            document.getElementById('edit-title').value = book.title || '';
+            document.getElementById('edit-authorname').value = book.authorName || '';
+            document.getElementById('edit-deathyear').value = book.deathYear || '';
+            document.getElementById('edit-publisher').value = book.publisher || '';
+            document.getElementById('edit-place').value = book.place || '';
+            document.getElementById('edit-edition').value = book.edition || '';
+            document.getElementById('edit-pubyear').value = book.pubYear || '';
+
+            document.getElementById('modal-title').innerText = 'Edit Book';
+            document.getElementById('book-modal').classList.remove('hidden');
+            document.getElementById('book-modal').classList.add('flex');
+        }
+
+        function saveBook() {
+            const id = document.getElementById('edit-id').value;
+            const title = document.getElementById('edit-title').value.trim();
+            
+            if (!title) {
+                showToast('Book Title is required!', 'error');
+                return;
+            }
+
+            const bookData = {
+                title: title,
+                authorName: document.getElementById('edit-authorname').value.trim(),
+                deathYear: document.getElementById('edit-deathyear').value.trim(),
+                publisher: document.getElementById('edit-publisher').value.trim(),
+                place: document.getElementById('edit-place').value.trim(),
+                edition: document.getElementById('edit-edition').value.trim(),
+                pubYear: document.getElementById('edit-pubyear').value.trim()
+            };
+
+            if (id) {
+                const index = books.findIndex(b => b.id === id);
+                if (index !== -1) books[index] = { ...books[index], ...bookData };
+                showToast('Book updated successfully');
+            } else {
+                books.push({ id: generateId(), ...bookData });
+                showToast('Book added successfully');
+            }
+
+            saveData();
+            closeBookModal();
+        }
+
+        function deleteBook(id) {
+            if (!confirm('Are you sure you want to delete this book? This action cannot be undone.')) return;
+            books = books.filter(b => b.id !== id);
+            saveData(); 
+            showToast('Book deleted successfully');
+        }
+
+        // ==========================================
+        // CITATION BUILDER (TAB 1)
+        // ==========================================
+        function renderBookSelect() {
+            const select = document.getElementById('book-select');
+            const currentValue = select.value; 
+            
+            select.innerHTML = '<option value="">-- Select Book --</option>';
+            
+            const sortedBooks = [...books].sort((a, b) => a.title.localeCompare(b.title));
+            
+            sortedBooks.forEach(book => {
+                const opt = document.createElement('option');
+                opt.value = book.id;
+                let label = book.title;
+                if(book.publisher) label += ` [${book.publisher}]`;
+                opt.textContent = label;
+                select.appendChild(opt);
+            });
+
+            if (currentValue && books.find(b => b.id === currentValue)) {
+                select.value = currentValue;
+            }
+        }
+
+        function clearCitationFields() {
+            document.getElementById('dyn-kitab').value = '';
+            document.getElementById('dyn-bab').value = '';
+            document.getElementById('dyn-tahta').value = '';
+            document.getElementById('dyn-vol').value = '';
+            document.getElementById('dyn-page').value = '';
+            document.getElementById('dyn-hadith').value = '';
+            showToast('Input fields cleared', 'info');
+        }
+
+        function generateCitation() {
+            const bookId = document.getElementById('book-select').value;
+            if (!bookId) {
+                showToast('Please select a book first', 'error');
+                return;
+            }
+
+            const book = books.find(b => b.id === bookId);
+            
+            const dynData = {
+                kitab: document.getElementById('dyn-kitab').value.trim(),
+                bab: document.getElementById('dyn-bab').value.trim(),
+                tahta: document.getElementById('dyn-tahta').value.trim(),
+                vol: toArabicDigits(document.getElementById('dyn-vol').value.trim()),
+                page: toArabicDigits(document.getElementById('dyn-page').value.trim()),
+                hadith: toArabicDigits(document.getElementById('dyn-hadith').value.trim())
+            };
+
+            // 1. Build Intro String (Urdu Style)
+            let introText = "";
+            if (book.authorName) introText += book.authorName + " ";
+            if (book.deathYear) introText += `متوفی ${toArabicDigits(book.deathYear)} `;
+            
+            if(introText) introText = introText.trim() + " لکھتے ہیں:";
+            else introText = "صاحبِ کتاب لکھتے ہیں:"; 
+
+            // 2. Build Citation Array (Arabic Style)
+            const citationElements = [];
+            
+            citationElements.push(book.title);
+            if (dynData.kitab) citationElements.push(dynData.kitab);
+            if (dynData.bab) citationElements.push(dynData.bab);
+            if (dynData.tahta) citationElements.push(dynData.tahta);
+            
+            let volPage = "";
+            if (dynData.vol && dynData.page) volPage = `${dynData.vol} / ${dynData.page}`;
+            else if (dynData.vol) volPage = `ج ${dynData.vol}`;
+            else if (dynData.page) volPage = `ص ${dynData.page}`;
+            if (volPage) citationElements.push(volPage);
+            
+            if (dynData.hadith) citationElements.push(`رقم: ${dynData.hadith}`);
+            
+            if (book.publisher) citationElements.push(`مطبوعة ${book.publisher}`);
+            if (book.place) citationElements.push(book.place);
+            if (book.edition) citationElements.push(book.edition);
+            if (book.pubYear) citationElements.push(toArabicDigits(book.pubYear));
+
+            const citationString = "(" + citationElements.join('، ') + ")";
+
+            // Store pure text for copying
+            textIntroRaw = introText;
+            textArabicRaw = citationString;
+
+            // Render to UI
+            document.getElementById('citation-placeholder').classList.add('hidden');
+            document.getElementById('citation-container').classList.remove('hidden');
+            
+            document.getElementById('out-intro').innerText = textIntroRaw;
+            document.getElementById('out-arabic').innerText = textArabicRaw;
+
+            addToBibliography(book);
+        }
+
+        // Copy Handler System
+        async function copyCitation(type) {
+            if (!textIntroRaw || !textArabicRaw) {
+                showToast('Generate a citation first', 'error');
+                return;
+            }
+
+            let textToCopy = "";
+            let msg = "";
+
+            if (type === 'intro') {
+                textToCopy = textIntroRaw;
+                msg = "Urdu intro copied to clipboard";
+            } else if (type === 'arabic') {
+                textToCopy = textArabicRaw;
+                msg = "Arabic reference copied to clipboard";
+            } else if (type === 'both') {
+                textToCopy = `${textIntroRaw} ${textArabicRaw}`;
+                msg = "Full citation copied to clipboard";
+            }
+
+            try {
+                const textArea = document.createElement("textarea");
+                textArea.value = textToCopy;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                showToast(msg);
+            } catch (err) {
+                showToast('Copy failed', 'error');
+            }
+        }
+
+        // ==========================================
+        // BIBLIOGRAPHY (TAB 3)
+        // ==========================================
+        function addToBibliography(book) {
+            const exists = usedReferences.find(r => r.id === book.id);
+            if (!exists) {
+                usedReferences.push(book);
+                localStorage.setItem('islamic_citation_refs_v5', JSON.stringify(usedReferences));
+                renderBibliography();
+            }
+        }
+
+        function renderBibliography() {
+            const container = document.getElementById('bibliography-output');
+            container.innerHTML = '';
+            
+            if (usedReferences.length === 0) {
+                container.innerHTML = '<span class="text-gray-400 font-sans text-sm">Bibliography is empty.</span>';
+                return;
+            }
+
+            const sortedRefs = [...usedReferences].sort((a, b) => (a.title || '').localeCompare(b.title || ''));
+            let listHTML = '<ol class="list-decimal list-inside space-y-3 font-arabic text-xl">';
+            
+            sortedRefs.forEach(book => {
+                const elements = [];
+                elements.push(`<strong class="text-primary">${book.title}</strong>`);
+                
+                let authorStr = book.authorName || '';
+                if (book.deathYear) authorStr += ` (متوفى ${toArabicDigits(book.deathYear)})`;
+                if (authorStr) elements.push(authorStr);
+
+                if (book.publisher) elements.push(`مطبوعة ${book.publisher}`);
+                if (book.place) elements.push(book.place);
+                if (book.edition) elements.push(book.edition);
+                if (book.pubYear) elements.push(toArabicDigits(book.pubYear));
+
+                listHTML += `<li>${elements.join('، ')}</li>`;
+            });
+
+            listHTML += '</ol>';
+            container.innerHTML = listHTML;
+        }
+
+        function clearBibliography() {
+            if (!confirm('Are you sure you want to clear the current bibliography?')) return;
+            usedReferences = [];
+            localStorage.setItem('islamic_citation_refs_v5', JSON.stringify(usedReferences));
+            renderBibliography();
+            showToast('Bibliography cleared');
+        }
+
+        function copyBibliography() {
+            if (usedReferences.length === 0) {
+                showToast('Bibliography is empty', 'error');
+                return;
+            }
+            
+            const sortedRefs = [...usedReferences].sort((a, b) => (a.title || '').localeCompare(b.title || ''));
+            let plainTextList = "";
+            
+            sortedRefs.forEach((book, index) => {
+                const elements = [];
+                elements.push(book.title);
+                
+                let authorStr = book.authorName || '';
+                if (book.deathYear) authorStr += ` (متوفى ${toArabicDigits(book.deathYear)})`;
+                if (authorStr) elements.push(authorStr);
+                
+                if (book.publisher) elements.push(`مطبوعة ${book.publisher}`);
+                if (book.place) elements.push(book.place);
+                if (book.edition) elements.push(book.edition);
+                if (book.pubYear) elements.push(toArabicDigits(book.pubYear));
+
+                plainTextList += `${index + 1}. ${elements.join('، ')}\n`;
+            });
+
+            const textArea = document.createElement("textarea");
+            textArea.value = plainTextList;
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+            showToast('Bibliography copied to clipboard!');
+        }
+
+        // ==========================================
+        // SYSTEM FUNCTIONS
+        // ==========================================
+        function clearAllData() {
+            if (!confirm('WARNING: This will permanently delete all saved books and bibliography data! Are you sure?')) return;
+            books = [];
+            usedReferences = [];
+            localStorage.removeItem('islamic_citation_books_v5');
+            localStorage.removeItem('islamic_citation_refs_v5');
+            renderBookSelect();
+            renderDatabaseTable();
+            renderBibliography();
+            showToast('All database data deleted');
+        }
+
+        function exportData() {
+            if (books.length === 0) {
+                showToast('No data to export', 'error');
+                return;
+            }
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(books));
+            const downloadAnchorNode = document.createElement('a');
+            downloadAnchorNode.setAttribute("href", dataStr);
+            downloadAnchorNode.setAttribute("download", "islamic_citation_database_backup.json");
+            document.body.appendChild(downloadAnchorNode);
+            downloadAnchorNode.click();
+            downloadAnchorNode.remove();
+        }
+
+    </script>
+</body>
+</html>
