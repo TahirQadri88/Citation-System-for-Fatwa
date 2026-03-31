@@ -21,7 +21,8 @@
                         gold: '#b8860b',
                         'gold-light': '#dfb95c',
                         primary: '#1a4a1a',
-                        secondary: '#8b1a1a'
+                        secondary: '#8b1a1a',
+                        surface: '#ffffff'
                     },
                     fontFamily: {
                         sans: ['Inter', 'sans-serif'],
@@ -42,7 +43,7 @@
         ::-webkit-scrollbar-thumb { background: #c9a84c; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #b8860b; }
 
-        .tab-active { border-bottom: 3px solid #1a4a1a; color: #1a4a1a; font-weight: 600; }
+        .tab-active { border-bottom: 3px solid #b8860b; color: #b8860b; font-weight: 600; }
         .tab-inactive { border-bottom: 3px solid transparent; color: #e5e7eb; }
         
         @keyframes fadeOut {
@@ -50,36 +51,73 @@
             80% { opacity: 1; transform: translateY(0); }
             100% { opacity: 0; transform: translateY(-20px); }
         }
-        .toast { animation: fadeOut 3s forwards; }
+        .toast { animation: fadeOut 3s forwards; z-index: 9999; }
         
-        /* Ensure inputs look correct for RTL languages even in LTR layout */
         .rtl-input { direction: rtl; text-align: right; font-family: 'Amiri', serif; font-size: 1.1rem; }
+
+        /* Tile Hover Effects */
+        .tile-hover { transition: all 0.3s ease; }
+        .tile-hover:hover { transform: translateY(-5px); box-shadow: 0 10px 25px -5px rgba(26, 74, 26, 0.3); }
+
+        /* Loading Spinner */
+        .loader {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #b8860b;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
-<body class="min-h-screen flex flex-col font-sans">
+<body class="min-h-screen flex flex-col font-sans relative">
+
+    <!-- Global App Loader (blocks UI until cloud is ready) -->
+    <div id="global-loader" class="fixed inset-0 bg-parchment z-50 flex flex-col items-center justify-center transition-opacity duration-500">
+        <i class="fa-solid fa-book-open-reader text-gold text-6xl mb-4 animate-bounce"></i>
+        <h2 class="text-2xl font-bold text-primary mb-2">Fatwa Citation Engine</h2>
+        <div class="flex items-center gap-2 text-gray-600 font-medium">
+            <div class="loader"></div> Connecting to Secure Cloud...
+        </div>
+    </div>
 
     <!-- Header -->
-    <header class="bg-primary text-white shadow-md z-10 relative">
+    <header class="bg-primary text-white shadow-lg z-10 relative">
         <div class="container mx-auto px-4 py-4 flex flex-col md:flex-row justify-between items-center gap-4">
-            <h1 class="text-xl md:text-2xl font-bold flex items-center gap-2">
-                <i class="fa-solid fa-book-open-reader text-gold"></i> Fatwa Citation Engine
+            <h1 class="text-xl md:text-2xl font-bold flex items-center gap-3 cursor-pointer" onclick="window.switchTab('home')">
+                <div class="bg-gold text-white p-2 rounded-lg shadow-inner"><i class="fa-solid fa-book-open-reader"></i></div>
+                <div>
+                    <div>Fatwa Citation Engine</div>
+                    <div class="text-xs font-normal text-gold-light mt-0.5">By Abul-Laith Muhammad Tahir Qadri</div>
+                </div>
             </h1>
-            <div class="flex gap-2 md:gap-4">
-                <button onclick="exportData()" class="bg-gold hover:bg-yellow-600 text-white px-4 py-2 rounded text-sm transition shadow font-medium">
-                    <i class="fa-solid fa-download mr-1"></i> Backup Database
+            <div class="flex items-center gap-4 bg-green-900/50 px-4 py-2 rounded-full border border-green-800">
+                <span id="user-greeting" class="text-sm font-semibold text-white hidden"></span>
+                <span id="cloud-status" class="text-xs font-semibold text-green-400 flex items-center gap-1"><i class="fa-solid fa-cloud-check"></i> Cloud Synced</span>
+                <span id="cloud-syncing" class="text-xs font-semibold text-yellow-400 hidden flex items-center gap-1"><i class="fa-solid fa-cloud-arrow-up animate-pulse"></i> Syncing...</span>
+                <button onclick="window.switchTab('home')" class="text-white hover:text-gold transition font-medium text-lg ml-2" title="Home">
+                    <i class="fa-solid fa-house"></i>
                 </button>
             </div>
         </div>
-        <!-- Tabs -->
-        <div class="container mx-auto px-4 flex gap-2 md:gap-6 text-sm md:text-base bg-primary text-white border-t border-green-800 overflow-x-auto whitespace-nowrap">
-            <button onclick="switchTab('citation')" id="tab-citation" class="py-3 px-4 tab-active bg-white text-primary rounded-t-lg transition-colors">
+        
+        <!-- Navigation Tabs -->
+        <div id="nav-tabs" class="hidden container mx-auto px-4 flex gap-2 md:gap-6 text-sm md:text-base bg-primary text-white border-t border-green-800 overflow-x-auto whitespace-nowrap pt-2">
+            <button onclick="window.switchTab('citation')" id="tab-citation" class="py-3 px-4 tab-inactive hover:text-gold transition-colors">
                 <i class="fa-solid fa-feather-pointed mr-1"></i> Citation Builder
             </button>
-            <button onclick="switchTab('database')" id="tab-database" class="py-3 px-4 tab-inactive hover:bg-green-800 rounded-t-lg transition-colors">
-                <i class="fa-solid fa-database mr-1"></i> Library (Database)
+            <button onclick="window.switchTab('database')" id="tab-database" class="py-3 px-4 tab-inactive hover:text-gold transition-colors">
+                <i class="fa-solid fa-database mr-1"></i> Library
             </button>
-            <button onclick="switchTab('bibliography')" id="tab-bibliography" class="py-3 px-4 tab-inactive hover:bg-green-800 rounded-t-lg transition-colors">
-                <i class="fa-solid fa-list-ol mr-1"></i> Bibliography
+            <button onclick="window.switchTab('bibliography')" id="tab-bibliography" class="py-3 px-4 tab-inactive hover:text-gold transition-colors">
+                <i class="fa-solid fa-list-ol mr-1"></i> Bibliography Sessions
+            </button>
+            <button onclick="window.switchTab('style')" id="tab-style" class="py-3 px-4 tab-inactive hover:text-gold transition-colors">
+                <i class="fa-solid fa-pen-ruler mr-1"></i> Formatting
+            </button>
+            <button onclick="window.openSettings()" id="tab-settings" class="py-3 px-4 tab-inactive hover:text-gold transition-colors ml-auto">
+                <i class="fa-solid fa-gear mr-1"></i> Admin Panel
             </button>
         </div>
     </header>
@@ -87,55 +125,107 @@
     <!-- Main Content -->
     <main class="flex-grow container mx-auto px-4 py-8 relative">
 
+        <!-- ==================== TAB 0: HOME / DASHBOARD ==================== -->
+        <div id="view-home" class="block">
+            <div class="text-center mb-10">
+                <h2 class="text-3xl font-bold text-primary mb-3">Welcome to the Citation Engine</h2>
+                <p class="text-gray-600">Select an option below to begin managing your library and fatwa citations.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 max-w-7xl mx-auto">
+                
+                <!-- Tile 1: General Citation -->
+                <div onclick="window.startCitationMode('general')" class="tile-hover cursor-pointer bg-white rounded-2xl p-6 border-2 border-gray-100 flex flex-col items-center text-center shadow-sm">
+                    <div class="w-14 h-14 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center text-xl mb-4"><i class="fa-solid fa-feather"></i></div>
+                    <h3 class="text-base font-bold text-gray-800 mb-2">Citation Only</h3>
+                    <p class="text-xs text-gray-500">Generate a quick citation without saving it to any session.</p>
+                    <div class="mt-auto pt-4 text-blue-600 font-semibold text-xs uppercase tracking-wider">General Option <i class="fa-solid fa-arrow-right ml-1"></i></div>
+                </div>
+
+                <!-- Tile 2: Session Citation -->
+                <div onclick="window.startCitationMode('session')" class="tile-hover cursor-pointer bg-white rounded-2xl p-6 border-2 border-green-100 flex flex-col items-center text-center shadow-sm relative overflow-hidden">
+                    <div class="absolute top-0 right-0 bg-green-500 text-white text-[9px] font-bold px-2 py-1 rounded-bl-lg uppercase tracking-wider shadow">Secured</div>
+                    <div class="w-14 h-14 rounded-full bg-green-50 text-green-600 flex items-center justify-center text-xl mb-4"><i class="fa-solid fa-layer-group"></i></div>
+                    <h3 class="text-base font-bold text-gray-800 mb-2">Bibliography</h3>
+                    <p class="text-xs text-gray-500">Log in securely to save and structure citations into active sessions.</p>
+                    <div class="mt-auto pt-4 text-green-600 font-semibold text-xs uppercase tracking-wider">Session Mode <i class="fa-solid fa-arrow-right ml-1"></i></div>
+                </div>
+
+                <!-- Tile 3: Database -->
+                <div onclick="window.switchTab('database')" class="tile-hover cursor-pointer bg-white rounded-2xl p-6 border-2 border-purple-100 flex flex-col items-center text-center shadow-sm">
+                    <div class="w-14 h-14 rounded-full bg-purple-50 text-purple-600 flex items-center justify-center text-xl mb-4"><i class="fa-solid fa-book-quran"></i></div>
+                    <h3 class="text-base font-bold text-gray-800 mb-2">Database</h3>
+                    <p class="text-xs text-gray-500">View and search your complete cloud-synced library of books.</p>
+                    <div class="mt-auto pt-4 text-purple-600 font-semibold text-xs uppercase tracking-wider">View Library <i class="fa-solid fa-arrow-right ml-1"></i></div>
+                </div>
+
+                <!-- Tile 4: Citation Style -->
+                <div onclick="window.switchTab('style')" class="tile-hover cursor-pointer bg-white rounded-2xl p-6 border-2 border-orange-100 flex flex-col items-center text-center shadow-sm">
+                    <div class="w-14 h-14 rounded-full bg-orange-50 text-orange-600 flex items-center justify-center text-xl mb-4"><i class="fa-solid fa-pen-ruler"></i></div>
+                    <h3 class="text-base font-bold text-gray-800 mb-2">Style Settings</h3>
+                    <p class="text-xs text-gray-500">Rearrange columns, include/exclude details like Edition or Pub Year.</p>
+                    <div class="mt-auto pt-4 text-orange-600 font-semibold text-xs uppercase tracking-wider">Format Options <i class="fa-solid fa-arrow-right ml-1"></i></div>
+                </div>
+
+                <!-- Tile 5: Settings (Admin) -->
+                <div onclick="window.openSettings()" class="tile-hover cursor-pointer bg-gradient-to-b from-gray-800 to-gray-900 rounded-2xl p-6 flex flex-col items-center text-center shadow-md border-2 border-gray-900">
+                    <div class="w-14 h-14 rounded-full bg-gray-700 text-gold-light flex items-center justify-center text-xl mb-4 shadow-inner"><i class="fa-solid fa-shield-halved"></i></div>
+                    <h3 class="text-base font-bold text-white mb-2">Admin Panel</h3>
+                    <p class="text-xs text-gray-400">Manage Cloud DB, User Sessions, and CSV Operations.</p>
+                    <div class="mt-auto pt-4 text-gold-light font-semibold text-xs uppercase tracking-wider">Super User <i class="fa-solid fa-arrow-right ml-1"></i></div>
+                </div>
+
+            </div>
+        </div>
+
         <!-- ==================== TAB 1: CITATION BUILDER ==================== -->
-        <div id="view-citation" class="block">
+        <div id="view-citation" class="hidden">
+            <div id="citation-mode-banner" class="mb-6 rounded-lg p-3 text-sm font-semibold flex items-center justify-center gap-2 shadow-sm"></div>
+
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <!-- Book Selection & Dynamic Form -->
+                <!-- Form Area -->
                 <div class="lg:col-span-1 bg-white p-6 rounded-lg shadow border border-gray-200">
                     <h2 class="text-lg font-bold mb-4 text-primary border-b pb-2">Current Fatwa Details</h2>
                     
                     <div class="mb-5">
                         <label class="block text-sm font-semibold text-gray-700 mb-1">Select Book</label>
-                        <select id="book-select" class="w-full border rounded p-2 rtl-input bg-gray-50 focus:ring-2 focus:ring-primary focus:outline-none">
-                            <option value="">-- Select Book --</option>
-                            <!-- Populated via JS -->
-                        </select>
+                        <select id="book-select" class="w-full border border-gray-300 rounded p-2.5 rtl-input bg-gray-50 focus:ring-2 focus:ring-primary focus:outline-none shadow-sm text-gray-800"></select>
                     </div>
 
                     <div class="space-y-4">
                         <div>
                             <label class="block text-sm font-semibold text-gray-700 mb-1">Kitab (كتاب)</label>
-                            <input type="text" id="dyn-kitab" placeholder="مثال: كتاب الصلاة" class="w-full border rounded p-2 rtl-input focus:ring-2 focus:ring-primary">
+                            <input type="text" id="dyn-kitab" class="w-full border border-gray-300 rounded p-2 rtl-input focus:ring-2 focus:ring-primary shadow-sm">
                         </div>
                         <div>
                             <label class="block text-sm font-semibold text-gray-700 mb-1">Bab / Fasl (باب / فصل)</label>
-                            <input type="text" id="dyn-bab" placeholder="مثال: باب الإمامة" class="w-full border rounded p-2 rtl-input focus:ring-2 focus:ring-primary">
+                            <input type="text" id="dyn-bab" class="w-full border border-gray-300 rounded p-2 rtl-input focus:ring-2 focus:ring-primary shadow-sm">
                         </div>
                         <div>
                             <label class="block text-sm font-semibold text-gray-700 mb-1">Tahta Qawlihi / Ayah (تحت قوله)</label>
-                            <input type="text" id="dyn-tahta" placeholder="مثال: تحت الآية: إنما يعمر..." class="w-full border rounded p-2 rtl-input focus:ring-2 focus:ring-primary">
+                            <input type="text" id="dyn-tahta" class="w-full border border-gray-300 rounded p-2 rtl-input focus:ring-2 focus:ring-primary shadow-sm">
                         </div>
                         <div class="grid grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-sm font-semibold text-gray-700 mb-1">Volume (الجزء)</label>
-                                <input type="text" id="dyn-vol" placeholder="1" class="w-full border rounded p-2 rtl-input text-center focus:ring-2 focus:ring-primary">
+                                <input type="text" id="dyn-vol" class="w-full border border-gray-300 rounded p-2 rtl-input text-center focus:ring-2 focus:ring-primary shadow-sm">
                             </div>
                             <div>
                                 <label class="block text-sm font-semibold text-gray-700 mb-1">Page (الصفحة)</label>
-                                <input type="text" id="dyn-page" placeholder="59" class="w-full border rounded p-2 rtl-input text-center focus:ring-2 focus:ring-primary">
+                                <input type="text" id="dyn-page" class="w-full border border-gray-300 rounded p-2 rtl-input text-center focus:ring-2 focus:ring-primary shadow-sm">
                             </div>
                         </div>
                         <div>
                             <label class="block text-sm font-semibold text-gray-700 mb-1">Hadith/Mas'alah No. (رقم)</label>
-                            <input type="text" id="dyn-hadith" placeholder="450" class="w-full border rounded p-2 rtl-input text-center focus:ring-2 focus:ring-primary">
+                            <input type="text" id="dyn-hadith" class="w-full border border-gray-300 rounded p-2 rtl-input text-center focus:ring-2 focus:ring-primary shadow-sm">
                         </div>
                     </div>
 
                     <div class="mt-6 flex gap-2">
-                        <button onclick="generateCitation()" class="flex-grow bg-gold hover:bg-yellow-600 text-white font-bold py-3 px-4 rounded transition shadow text-base">
+                        <button onclick="window.generateCitation()" class="flex-grow bg-gold hover:bg-yellow-600 text-white font-bold py-3 px-4 rounded transition shadow text-base">
                             <i class="fa-solid fa-wand-magic-sparkles mr-2"></i> Generate
                         </button>
-                        <button onclick="clearCitationFields()" class="bg-gray-200 hover:bg-gray-300 text-gray-700 py-3 px-4 rounded transition shadow" title="Clear input fields">
+                        <button onclick="window.clearCitationFields()" class="bg-gray-200 hover:bg-gray-300 text-gray-700 py-3 px-4 rounded transition shadow" title="Clear input fields">
                             <i class="fa-solid fa-eraser"></i>
                         </button>
                     </div>
@@ -146,43 +236,35 @@
                     <div class="bg-white p-6 rounded-lg shadow border border-gray-200 h-full flex flex-col">
                         <div class="flex justify-between items-center mb-4 border-b pb-2">
                             <h2 class="text-lg font-bold text-primary">Citation Output</h2>
-                            <button onclick="copyCitation('both')" class="bg-primary hover:bg-green-800 text-white px-3 py-1.5 rounded text-sm transition shadow font-medium">
+                            <button onclick="window.copyCitation('both')" class="bg-primary hover:bg-green-800 text-white px-3 py-1.5 rounded text-sm transition shadow font-medium">
                                 <i class="fa-regular fa-copy mr-1"></i> Copy Full Citation
                             </button>
                         </div>
                         
                         <div id="citation-container" class="flex-grow flex flex-col gap-4 hidden">
-                            
-                            <!-- Urdu Intro Block -->
+                            <!-- Urdu Intro -->
                             <div class="bg-parchment p-5 rounded border border-gray-300 shadow-sm relative group transition-all hover:border-gold">
                                 <div class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <button onclick="copyCitation('intro')" class="text-gray-600 hover:text-primary bg-white px-2 py-1 rounded shadow text-xs font-medium border">
-                                        <i class="fa-regular fa-copy mr-1"></i> Copy Intro
-                                    </button>
+                                    <button onclick="window.copyCitation('intro')" class="text-gray-600 hover:text-primary bg-white px-2 py-1 rounded shadow text-xs font-medium border"><i class="fa-regular fa-copy mr-1"></i> Copy Intro</button>
                                 </div>
                                 <p class="text-xs text-gray-400 mb-2 uppercase font-semibold tracking-wider">Urdu Intro (مقدمة)</p>
                                 <div id="out-intro" class="text-xl font-urdu text-secondary leading-loose" dir="rtl"></div>
                             </div>
 
-                            <!-- Arabic Citation Block -->
+                            <!-- Arabic Ref -->
                             <div class="bg-white p-5 rounded border border-gold-light shadow-sm relative group transition-all hover:border-gold">
                                 <div class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <button onclick="copyCitation('arabic')" class="text-gray-600 hover:text-primary bg-white px-2 py-1 rounded shadow text-xs font-medium border">
-                                        <i class="fa-regular fa-copy mr-1"></i> Copy Reference
-                                    </button>
+                                    <button onclick="window.copyCitation('arabic')" class="text-gray-600 hover:text-primary bg-white px-2 py-1 rounded shadow text-xs font-medium border"><i class="fa-regular fa-copy mr-1"></i> Copy Reference</button>
                                 </div>
                                 <p class="text-xs text-gray-400 mb-2 uppercase font-semibold tracking-wider">Arabic Reference (المرجع)</p>
                                 <div id="out-arabic" class="text-2xl font-arabic font-bold text-primary leading-loose" dir="rtl"></div>
                             </div>
-
                         </div>
-
                         <div id="citation-placeholder" class="flex-grow flex items-center justify-center text-gray-400 text-sm bg-gray-50 rounded border border-dashed border-gray-300 min-h-[250px]">
-                            Generated citation will appear here...
-                        </div>
-
-                        <div class="mt-4 text-xs text-gray-500 flex items-center">
-                            <i class="fa-solid fa-circle-info mr-2 text-gold"></i> English numbers (1, 2, 3) are automatically converted to Arabic digits (١, ٢, ٣).
+                            <div class="text-center">
+                                <i class="fa-solid fa-quote-left text-3xl mb-3 text-gray-300"></i>
+                                <p>Generated citation will appear here...</p>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -192,126 +274,278 @@
         <!-- ==================== TAB 2: DATABASE ==================== -->
         <div id="view-database" class="hidden">
             <div class="bg-white p-6 rounded-lg shadow border border-gray-200">
-                <div class="flex flex-col md:flex-row justify-between items-center mb-6 border-b pb-4 gap-4">
-                    <h2 class="text-xl font-bold text-primary">Library Management</h2>
-                    <div class="flex flex-wrap justify-end gap-2">
-                        <button onclick="removeExactDuplicates()" class="bg-gray-100 hover:bg-gray-200 border border-gray-300 text-gray-700 px-3 py-1.5 rounded transition shadow-sm text-sm font-medium">
-                            <i class="fa-solid fa-broom mr-1"></i> Clean Duplicates
-                        </button>
-                        <label class="bg-gold hover:bg-yellow-600 text-white px-3 py-1.5 rounded cursor-pointer transition shadow-sm text-sm font-medium">
-                            <i class="fa-solid fa-file-csv mr-1"></i> Import CSV
-                            <input type="file" id="csv-upload" accept=".csv" class="hidden" onchange="importCSV(event)">
-                        </label>
-                        <button onclick="openBookModal()" class="bg-primary hover:bg-green-800 text-white px-3 py-1.5 rounded transition shadow-sm text-sm font-medium">
-                            <i class="fa-solid fa-plus mr-1"></i> Add Book
-                        </button>
-                        <button onclick="clearAllData()" class="bg-red-50 hover:bg-red-100 border border-red-200 text-red-700 px-3 py-1.5 rounded transition shadow-sm text-sm font-medium">
-                            <i class="fa-solid fa-trash-can mr-1"></i> Delete All
-                        </button>
-                    </div>
+                <div class="flex justify-between items-center mb-6 border-b pb-4">
+                    <h2 class="text-xl font-bold text-primary">Library Database</h2>
+                    <span class="text-sm text-green-700 bg-green-50 border border-green-200 px-3 py-1.5 rounded-full font-medium shadow-sm"><i class="fa-solid fa-cloud-arrow-down mr-1"></i> Cloud Synced</span>
                 </div>
-
                 <div class="mb-4 relative">
                     <i class="fa-solid fa-search absolute left-3 top-3.5 text-gray-400"></i>
-                    <input type="text" id="search-db" onkeyup="renderDatabaseTable()" placeholder="Search by book or author name..." class="w-full border rounded-md py-2.5 pl-10 pr-3 bg-gray-50 focus:ring-2 focus:ring-primary outline-none">
+                    <input type="text" id="search-db" onkeyup="window.renderDatabaseTable()" placeholder="Search library by book title, author, publisher..." class="w-full border border-gray-300 rounded-md py-2.5 pl-10 pr-3 bg-gray-50 focus:ring-2 focus:ring-primary outline-none shadow-sm">
                 </div>
-
-                <div class="overflow-x-auto rounded-md border border-gray-200">
+                <div class="overflow-x-auto rounded-md border border-gray-200 shadow-sm">
                     <table class="w-full text-left whitespace-nowrap">
-                        <thead class="bg-gray-100 border-b text-gray-600 text-sm">
-                            <tr>
-                                <th class="p-3 font-semibold">Book Title</th>
-                                <th class="p-3 font-semibold">Full Author Name</th>
-                                <th class="p-3 font-semibold">Publisher</th>
-                                <th class="p-3 font-semibold">Edition / Year</th>
-                                <th class="p-3 text-center font-semibold w-24">Actions</th>
+                        <thead class="bg-primary text-white text-sm">
+                            <tr id="db-table-header-row">
+                                <th class="p-3 font-semibold text-right">Book Title</th>
+                                <th class="p-3 font-semibold text-right">Author</th>
+                                <th class="p-3 font-semibold text-right">Publisher</th>
+                                <th class="p-3 text-center font-semibold w-24">Year/Ed</th>
+                                <!-- Admin Column added dynamically -->
                             </tr>
                         </thead>
-                        <tbody id="db-table-body" class="divide-y text-sm">
-                            <!-- Table rows via JS -->
-                        </tbody>
+                        <tbody id="db-table-body" class="divide-y text-sm"></tbody>
                     </table>
                 </div>
             </div>
         </div>
 
-        <!-- ==================== TAB 3: BIBLIOGRAPHY ==================== -->
+        <!-- ==================== TAB 3: BIBLIOGRAPHY SESSIONS ==================== -->
         <div id="view-bibliography" class="hidden">
             <div class="bg-white p-6 rounded-lg shadow border border-gray-200 min-h-[500px]">
-                <div class="flex justify-between items-center mb-4 border-b pb-2">
-                    <h2 class="text-xl font-bold text-primary">Current Bibliography</h2>
-                    <div class="flex gap-2">
-                        <button onclick="clearBibliography()" class="text-red-600 hover:text-red-800 transition px-3 py-1.5 border border-red-200 rounded text-sm bg-red-50 font-medium">
-                            <i class="fa-solid fa-eraser mr-1"></i> Clear List
-                        </button>
-                        <button onclick="copyBibliography()" class="bg-gold hover:bg-yellow-600 text-white px-4 py-1.5 rounded transition shadow font-medium text-sm">
-                            <i class="fa-solid fa-copy mr-1"></i> Copy All
-                        </button>
+                
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 border-b pb-4 gap-4">
+                    <div class="w-full md:w-auto">
+                        <h2 class="text-xl font-bold text-primary mb-3"><i class="fa-solid fa-layer-group text-gold mr-2"></i> Your Saved Sessions</h2>
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <select id="session-select" onchange="window.changeSession(this.value)" class="border border-gold rounded p-2 text-sm bg-parchment focus:ring-2 focus:ring-gold outline-none min-w-[250px] font-bold text-primary shadow-sm"></select>
+                            
+                            <button onclick="window.createNewSession()" class="text-white bg-green-600 hover:bg-green-700 px-3 py-2 rounded transition shadow-sm text-sm font-medium" title="Create New Session"><i class="fa-solid fa-plus"></i> New</button>
+                            <button onclick="window.renameSession()" class="text-gray-700 bg-gray-200 hover:bg-gray-300 px-3 py-2 rounded transition shadow-sm text-sm font-medium" title="Rename Session"><i class="fa-solid fa-pen"></i></button>
+                        </div>
+                    </div>
+                    
+                    <div class="flex flex-wrap gap-2 w-full md:w-auto mt-2 md:mt-0 justify-end">
+                        <button onclick="window.logoutRegularUser()" class="text-gray-600 hover:text-gray-800 transition px-4 py-2 border border-gray-200 rounded text-sm bg-gray-50 font-medium whitespace-nowrap shadow-sm" title="Sign Out"><i class="fa-solid fa-right-from-bracket"></i></button>
+                        
+                        <div class="border-l border-gray-300 mx-1"></div>
+                        
+                        <button onclick="window.sortBibliography()" class="text-blue-600 hover:text-blue-800 transition px-3 py-2 border border-blue-200 rounded text-sm bg-blue-50 font-bold whitespace-nowrap shadow-sm" title="Sort A-Z"><i class="fa-solid fa-arrow-down-a-z"></i></button>
+                        <button onclick="window.clearBibliography()" class="text-red-600 hover:text-red-800 transition px-3 py-2 border border-red-200 rounded text-sm bg-red-50 font-bold whitespace-nowrap shadow-sm" title="Clear All"><i class="fa-solid fa-trash-can"></i></button>
+                        <button onclick="window.downloadWordDoc()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded transition shadow font-bold text-sm whitespace-nowrap"><i class="fa-solid fa-file-word mr-1"></i> Doc</button>
+                        <button onclick="window.copyBibliography()" class="bg-gold hover:bg-yellow-600 text-white px-4 py-2 rounded transition shadow font-bold text-sm whitespace-nowrap"><i class="fa-solid fa-copy mr-1"></i> Copy</button>
                     </div>
                 </div>
                 
-                <p class="text-gray-500 text-sm mb-4">Books are automatically added to this list when you generate a citation. The list is sorted alphabetically.</p>
+                <div id="bibliography-output" class="bg-parchment p-8 rounded-lg border border-gold-light text-lg font-urdu shadow-inner min-h-[300px] leading-loose space-y-4" dir="rtl">
+                    <!-- populated by js -->
+                </div>
+            </div>
+        </div>
 
-                <div id="bibliography-output" class="bg-parchment p-6 rounded border border-gold-light text-lg font-urdu shadow-inner min-h-[300px] leading-loose space-y-4" dir="rtl">
-                    <!-- Output appears here -->
+        <!-- ==================== TAB 4: STYLE SETTINGS (GLOBAL) ==================== -->
+        <div id="view-style" class="hidden">
+            <div class="bg-white p-6 rounded-lg shadow border border-gray-200 max-w-3xl mx-auto">
+                <div class="flex justify-between items-center mb-6 border-b pb-4">
+                    <h2 class="text-xl font-bold text-primary"><i class="fa-solid fa-pen-ruler text-orange-500 mr-2"></i> Citation Formatting</h2>
+                    <span class="text-sm text-gray-500 bg-gray-100 px-3 py-1.5 rounded-full border border-gray-200 shadow-sm">Local Device Setting</span>
+                </div>
+
+                <div class="mb-8 bg-gray-50 p-5 rounded-lg border border-gray-200 shadow-inner">
+                    <h3 class="font-bold text-gray-800 mb-4 border-b pb-2">Urdu Introduction Text</h3>
+                    <div class="flex flex-col md:flex-row gap-6">
+                        <label class="flex items-center gap-3 cursor-pointer bg-white p-4 rounded-lg border border-gray-200 flex-1 hover:border-gold transition shadow-sm">
+                            <input type="checkbox" id="fmt-deathyear" class="form-checkbox h-5 w-5 text-gold rounded focus:ring-gold" onchange="window.updateFormatSettings()">
+                            <span class="font-bold text-gray-700">Include Death Year <span class="text-gray-400 font-normal text-sm ml-1">(متوفی ٩٧٠ ھ)</span></span>
+                        </label>
+                        <label class="flex items-center gap-3 cursor-pointer bg-white p-4 rounded-lg border border-gray-200 flex-1 hover:border-gold transition shadow-sm">
+                            <input type="checkbox" id="fmt-rahmatullah" class="form-checkbox h-5 w-5 text-gold rounded focus:ring-gold" onchange="window.updateFormatSettings()">
+                            <span class="font-bold text-gray-700">Add Rahmatullah <span class="text-gray-400 font-normal text-sm ml-1">(رحمہ اللہ)</span></span>
+                        </label>
+                    </div>
+                </div>
+
+                <div>
+                    <h3 class="font-bold text-gray-800 mb-2 border-b pb-2">Arabic Citation Bracket Structure</h3>
+                    <p class="text-sm text-gray-500 mb-5">Use the up/down arrows to change the order in which items appear inside the brackets. Uncheck to exclude.</p>
+                    
+                    <div id="format-list" class="space-y-3">
+                        <!-- Populated via JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== TAB 5: ADMIN SETTINGS ==================== -->
+        <div id="view-settings" class="hidden">
+            <div class="bg-white p-6 rounded-lg shadow border border-gray-200">
+                <div class="flex justify-between items-center mb-6 border-b pb-4">
+                    <h2 class="text-2xl font-bold text-gray-800"><i class="fa-solid fa-shield-halved text-gold mr-2"></i> Super User Panel</h2>
+                    <button onclick="window.logoutAdmin()" class="text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-bold transition shadow-sm border border-gray-200"><i class="fa-solid fa-lock mr-1"></i> Lock Settings</button>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    
+                    <!-- DB Management -->
+                    <div class="bg-gray-50 p-6 rounded-xl border border-gray-200 shadow-inner">
+                        <h3 class="text-lg font-bold text-primary mb-4 border-b pb-2"><i class="fa-solid fa-cloud text-blue-500 mr-2"></i> Master Database Engine</h3>
+                        <div class="space-y-4">
+                            <button onclick="window.openBookModal()" class="w-full text-left bg-white border border-gray-300 hover:border-green-500 hover:bg-green-50 px-5 py-4 rounded-lg transition flex items-center justify-between shadow-sm">
+                                <div><span class="font-bold text-gray-800 block text-base">Add Single Book</span><span class="text-xs text-gray-500 font-medium">Insert a record directly to Cloud.</span></div>
+                                <i class="fa-solid fa-plus text-green-600 text-xl"></i>
+                            </button>
+                            
+                            <label class="w-full text-left bg-white border border-gray-300 hover:border-blue-500 hover:bg-blue-50 px-5 py-4 rounded-lg transition flex items-center justify-between cursor-pointer shadow-sm">
+                                <div><span class="font-bold text-gray-800 block text-base">Import CSV to Cloud</span><span class="text-xs text-gray-500 font-medium">Bulk upload database from CSV.</span></div>
+                                <i class="fa-solid fa-cloud-arrow-up text-blue-600 text-xl"></i>
+                                <input type="file" id="csv-upload" accept=".csv" class="hidden" onchange="window.importCSV(event)">
+                            </label>
+
+                            <button onclick="window.exportCSV()" class="w-full text-left bg-white border border-gray-300 hover:border-gold hover:bg-yellow-50 px-5 py-4 rounded-lg transition flex items-center justify-between shadow-sm">
+                                <div><span class="font-bold text-gray-800 block text-base">Export Library</span><span class="text-xs text-gray-500 font-medium">Download entire DB as CSV.</span></div>
+                                <i class="fa-solid fa-download text-gold text-xl"></i>
+                            </button>
+
+                            <button onclick="window.removeExactDuplicates()" class="w-full text-left bg-white border border-gray-300 hover:border-purple-500 hover:bg-purple-50 px-5 py-4 rounded-lg transition flex items-center justify-between shadow-sm">
+                                <div><span class="font-bold text-gray-800 block text-base">Clean Duplicates</span><span class="text-xs text-gray-500 font-medium">Scan cloud and remove exact copies.</span></div>
+                                <i class="fa-solid fa-broom text-purple-600 text-xl"></i>
+                            </button>
+
+                            <button onclick="window.clearAllData()" class="w-full text-left bg-white border border-red-200 hover:border-red-500 hover:bg-red-50 px-5 py-4 rounded-lg transition flex items-center justify-between shadow-sm mt-6">
+                                <div><span class="font-bold text-red-700 block text-base">Factory Reset Database</span><span class="text-xs text-red-500 font-medium">Permanently delete ALL books from Cloud.</span></div>
+                                <i class="fa-solid fa-triangle-exclamation text-red-600 text-xl animate-pulse"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="space-y-6">
+                        <!-- Admin Management -->
+                        <div class="bg-gray-50 p-6 rounded-xl border border-gray-200 shadow-inner">
+                            <h3 class="text-lg font-bold text-primary mb-4 border-b pb-2"><i class="fa-solid fa-user-shield mr-2"></i> Manage Admin Access</h3>
+                            <div class="space-y-3">
+                                <div class="flex gap-3">
+                                    <input type="text" id="new-admin-user" placeholder="New Username" class="w-1/2 border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-primary outline-none shadow-sm">
+                                    <input type="password" id="new-admin-pwd" placeholder="Password" class="w-1/2 border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-primary outline-none shadow-sm">
+                                </div>
+                                <button onclick="window.addAdmin()" class="w-full bg-primary hover:bg-green-800 text-white px-4 py-3 rounded-lg text-sm font-bold transition shadow-md">Add Super User</button>
+                            </div>
+                        </div>
+
+                        <!-- Session Management -->
+                        <div class="bg-gray-50 p-6 rounded-xl border border-gray-200 shadow-inner">
+                            <div class="flex justify-between items-center mb-4 border-b pb-2">
+                                <h3 class="text-lg font-bold text-primary"><i class="fa-solid fa-users-gear mr-2"></i> Cloud Users & Sessions</h3>
+                            </div>
+                            <div class="max-h-64 overflow-y-auto border border-gray-300 rounded-lg bg-white shadow-sm">
+                                <table class="w-full text-left text-sm whitespace-nowrap">
+                                    <thead class="bg-gray-100 text-gray-700 sticky top-0 border-b border-gray-300 shadow-sm">
+                                        <tr>
+                                            <th class="p-3 font-bold">User (Cell)</th>
+                                            <th class="p-3 font-bold">Session Name</th>
+                                            <th class="p-3 text-center font-bold">Wipe</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="admin-session-table" class="divide-y divide-gray-200">
+                                        <!-- Populated via JS -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
             </div>
         </div>
 
     </main>
 
-    <!-- Modal: Add/Edit Book -->
-    <div id="book-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50 p-4">
-        <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <div class="p-5 border-b flex justify-between items-center bg-gray-50 rounded-t-lg">
-                <h3 id="modal-title" class="text-lg font-bold text-primary">Add / Edit Book</h3>
-                <button onclick="closeBookModal()" class="text-gray-400 hover:text-red-500 transition"><i class="fa-solid fa-xmark text-xl"></i></button>
+    <!-- Modal: User Registration / Login (For Session Mode) -->
+    <div id="user-reg-modal" class="fixed inset-0 bg-black bg-opacity-70 hidden items-center justify-center z-50 p-4 backdrop-blur-sm">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-8 transform transition-all text-center">
+            <div class="w-20 h-20 bg-green-50 text-green-600 rounded-full flex items-center justify-center mx-auto mb-5 text-3xl shadow-inner border border-green-100">
+                <i class="fa-solid fa-user-lock"></i>
             </div>
-            <div class="p-6 space-y-5">
-                <input type="hidden" id="edit-id">
-                
-                <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-1">Book Title *</label>
-                    <input type="text" id="edit-title" class="w-full border rounded p-2 focus:ring-primary rtl-input" placeholder="اسم الكتاب">
-                </div>
+            <h3 class="text-2xl font-bold text-gray-800 mb-2">Secure Login</h3>
+            <p class="text-sm text-gray-500 mb-6 font-medium">Enter your Name and Cell number. If registered, you will be logged back in.</p>
+            
+            <input type="text" id="reg-name" placeholder="Full Name" class="w-full border-2 border-gray-200 rounded-xl p-3.5 focus:border-green-500 outline-none mb-3 font-semibold text-gray-800">
+            <input type="tel" id="reg-cell" placeholder="Cell Number (e.g. 03001234567)" class="w-full border-2 border-gray-200 rounded-xl p-3.5 focus:border-green-500 outline-none mb-8 font-bold text-gray-800 text-center tracking-wider">
+            
+            <div class="flex gap-3">
+                <button onclick="window.closeRegModal()" class="flex-1 px-4 py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 font-bold transition">Cancel</button>
+                <button onclick="window.registerUser()" class="flex-1 px-4 py-3 bg-green-600 text-white rounded-xl hover:bg-green-700 font-bold transition shadow-md">Enter</button>
+            </div>
+        </div>
+    </div>
 
-                <div class="bg-blue-50 p-4 rounded border border-blue-100">
-                    <h4 class="font-bold text-blue-800 border-b border-blue-200 pb-1 mb-2">Author Details</h4>
-                    <p class="text-xs text-gray-600 mb-3">Add exact titles (Allama, Imam) and Madhab (Hanafi) to the full name below.</p>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <!-- Modal: Admin Auth Prompt -->
+    <div id="auth-modal" class="fixed inset-0 bg-black bg-opacity-70 hidden items-center justify-center z-50 p-4 backdrop-blur-sm">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-8 transform transition-all text-center border-t-4 border-gold">
+            <div class="w-20 h-20 bg-gray-100 text-gray-800 rounded-full flex items-center justify-center mx-auto mb-5 text-3xl shadow-inner">
+                <i class="fa-solid fa-user-shield"></i>
+            </div>
+            <h3 class="text-2xl font-bold text-gray-800 mb-6">Admin Access</h3>
+            
+            <input type="text" id="auth-user" placeholder="Username" class="w-full border-2 border-gray-200 rounded-xl p-3.5 text-center focus:border-gold outline-none mb-3 font-semibold text-gray-800">
+            <input type="password" id="auth-pwd" placeholder="Password" class="w-full border-2 border-gray-200 rounded-xl p-3.5 text-center tracking-widest focus:border-gold outline-none mb-8 font-bold text-gray-800" onkeypress="if(event.key === 'Enter') window.checkAdminPassword()">
+            
+            <div class="flex gap-3">
+                <button onclick="window.closeAuthModal()" class="flex-1 px-4 py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 font-bold transition">Cancel</button>
+                <button onclick="window.checkAdminPassword()" class="flex-1 px-4 py-3 bg-primary text-white rounded-xl hover:bg-green-800 font-bold transition shadow-md">Unlock Panel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Add/Edit Book -->
+    <div id="book-modal" class="fixed inset-0 bg-black bg-opacity-60 hidden items-center justify-center z-50 p-4 backdrop-blur-sm">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div class="p-6 border-b flex justify-between items-center bg-gray-50 rounded-t-2xl">
+                <h3 id="modal-title" class="text-xl font-bold text-primary"><i class="fa-solid fa-cloud-arrow-up mr-2 text-blue-500"></i> Add/Edit Book in Cloud</h3>
+                <button onclick="window.closeBookModal()" class="text-gray-400 hover:text-red-500 transition w-8 h-8 flex items-center justify-center rounded-full hover:bg-red-50 bg-white border border-gray-200 shadow-sm"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <div class="p-6 space-y-6">
+                <input type="hidden" id="edit-id">
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-1">Book Title *</label>
+                    <input type="text" id="edit-title" class="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-primary rtl-input shadow-sm font-semibold" placeholder="اسم الكتاب">
+                </div>
+                <div class="bg-blue-50/30 p-5 rounded-xl border border-blue-100 shadow-inner">
+                    <h4 class="font-bold text-blue-800 mb-4 flex items-center text-sm uppercase tracking-wider"><i class="fa-solid fa-user-pen mr-2"></i> Author Details</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
                         <div class="md:col-span-2">
-                            <label class="block text-xs font-semibold text-gray-700 mb-1">Full Author Name</label>
-                            <input type="text" id="edit-authorname" placeholder="مثال: علامہ زین الدین بن ابراہیم ابن نجیم حنفی" class="w-full border rounded p-2 text-sm rtl-input">
+                            <label class="block text-xs font-bold text-gray-700 mb-1">Full Author Name (with Titles)</label>
+                            <input type="text" id="edit-authorname" placeholder="مثال: علامہ زین الدین بن ابراہیم" class="w-full border border-gray-300 rounded-lg p-2.5 rtl-input shadow-sm">
                         </div>
                         <div>
-                            <label class="block text-xs font-semibold text-gray-700 mb-1">Death Year (AH/CE)</label>
-                            <input type="text" id="edit-deathyear" placeholder="970ھ" class="w-full border rounded p-2 text-sm rtl-input">
+                            <label class="block text-xs font-bold text-gray-700 mb-1">Death Year (AH/CE)</label>
+                            <input type="text" id="edit-deathyear" placeholder="970ھ" class="w-full border border-gray-300 rounded-lg p-2.5 rtl-input text-center shadow-sm">
                         </div>
                     </div>
                 </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                     <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-1">Publisher (المطبعة)</label>
-                        <input type="text" id="edit-publisher" placeholder="دار الكتب العلمية" class="w-full border rounded p-2 rtl-input">
+                        <label class="block text-sm font-bold text-gray-700 mb-1">Publisher (المطبعة)</label>
+                        <input type="text" id="edit-publisher" placeholder="دار الكتب العلمية" class="w-full border border-gray-300 rounded-lg p-3 rtl-input shadow-sm">
                     </div>
                     <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-1">Place (مكان الطبع)</label>
-                        <input type="text" id="edit-place" placeholder="بيروت" class="w-full border rounded p-2 rtl-input">
+                        <label class="block text-sm font-bold text-gray-700 mb-1">Place (مكان الطبع)</label>
+                        <input type="text" id="edit-place" placeholder="بيروت" class="w-full border border-gray-300 rounded-lg p-3 rtl-input shadow-sm">
                     </div>
                     <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-1">Edition (الطبعة)</label>
-                        <input type="text" id="edit-edition" placeholder="الطبعة الأولى" class="w-full border rounded p-2 rtl-input">
+                        <label class="block text-sm font-bold text-gray-700 mb-1">Edition (الطبعة)</label>
+                        <input type="text" id="edit-edition" placeholder="الطبعة الأولى" class="w-full border border-gray-300 rounded-lg p-3 rtl-input shadow-sm">
                     </div>
                     <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-1">Pub Year (سنة الطبع)</label>
-                        <input type="text" id="edit-pubyear" placeholder="1413هـ" class="w-full border rounded p-2 rtl-input">
+                        <label class="block text-sm font-bold text-gray-700 mb-1">Pub Year (سنة الطبع)</label>
+                        <input type="text" id="edit-pubyear" placeholder="1413هـ" class="w-full border border-gray-300 rounded-lg p-3 rtl-input shadow-sm">
                     </div>
                 </div>
             </div>
-            <div class="p-5 border-t bg-gray-50 flex justify-end gap-3 rounded-b-lg">
-                <button onclick="closeBookModal()" class="px-4 py-2 border rounded text-gray-600 hover:bg-gray-100 font-medium transition">Cancel</button>
-                <button onclick="saveBook()" class="px-6 py-2 bg-primary text-white rounded hover:bg-green-800 font-medium transition shadow">Save Book</button>
+            <div class="p-6 border-t bg-gray-50 flex justify-end gap-3 rounded-b-2xl">
+                <button onclick="window.closeBookModal()" class="px-6 py-3 border border-gray-300 rounded-xl text-gray-700 hover:bg-white font-bold transition shadow-sm bg-gray-100">Cancel</button>
+                <button onclick="window.saveBook()" class="px-8 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 font-bold transition shadow-md"><i class="fa-solid fa-cloud-arrow-up mr-2"></i> Save to Cloud</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Custom Secure Dialog -->
+    <div id="dialog-modal" class="fixed inset-0 bg-black bg-opacity-70 hidden items-center justify-center z-50 p-4 backdrop-blur-sm">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-8 transform transition-all text-center">
+            <h3 id="dialog-title" class="text-2xl font-bold text-gray-800 mb-2"></h3>
+            <p id="dialog-message" class="text-sm text-gray-500 mb-6 font-medium"></p>
+            <input type="text" id="dialog-input" class="w-full border-2 border-gray-200 rounded-xl p-3.5 outline-none mb-6 hidden text-center font-bold text-gray-800 focus:border-gold">
+            <div class="flex gap-3">
+                <button id="dialog-cancel" class="flex-1 px-4 py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 font-bold transition shadow-sm">Cancel</button>
+                <button id="dialog-confirm" class="flex-1 px-4 py-3 bg-primary text-white rounded-xl hover:bg-green-800 font-bold transition shadow-md">Confirm</button>
             </div>
         </div>
     </div>
@@ -319,349 +553,562 @@
     <!-- Toast Notification Container -->
     <div id="toast-container" class="fixed bottom-5 left-1/2 transform -translate-x-1/2 z-50 flex flex-col gap-2 pointer-events-none"></div>
 
-    <script>
+    <!-- ========================================== -->
+    <!-- JAVASCRIPT: FIREBASE & CORE LOGIC -->
+    <!-- ========================================== -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
         // ==========================================
-        // STATE MANAGEMENT (V5)
+        // FIREBASE INITIALIZATION & AUTHENTICATION
         // ==========================================
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+
+        let firebaseUser = null;
         let books = [];
-        let usedReferences = [];
+        let allAppUsers = []; 
+        let allAppSessions = []; 
+        
+        const initAuth = async () => {
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            } catch (err) {
+                console.error("Auth Error", err);
+                document.getElementById('global-loader').innerHTML = `<p class="text-red-600 font-bold">Cloud Connection Failed.</p>`;
+            }
+        };
+
+        const startApp = async () => {
+            await initAuth();
+            onAuthStateChanged(auth, (user) => {
+                firebaseUser = user;
+                if (user) {
+                    setupCloudListeners();
+                    setTimeout(() => {
+                        const loader = document.getElementById('global-loader');
+                        if (loader) {
+                            loader.style.opacity = "0";
+                            setTimeout(() => loader.classList.add('hidden'), 500);
+                        }
+                    }, 1000);
+                }
+            });
+        };
+        startApp();
+
+        // ==========================================
+        // REAL-TIME CLOUD SYNCHRONIZATION
+        // ==========================================
+        const setupCloudListeners = () => {
+            if (!firebaseUser) return;
+            
+            const booksRef = collection(db, 'artifacts', appId, 'public', 'data', 'books');
+            onSnapshot(booksRef, (snapshot) => {
+                books = [];
+                snapshot.forEach(docSnap => books.push({ id: docSnap.id, ...docSnap.data() }));
+                renderBookSelect();
+                renderDatabaseTable();
+            }, (error) => console.error(error));
+
+            const usersRef = collection(db, 'artifacts', appId, 'public', 'data', 'app_users');
+            onSnapshot(usersRef, (snapshot) => {
+                allAppUsers = [];
+                snapshot.forEach(docSnap => allAppUsers.push(docSnap.data()));
+                if(isAdminLoggedIn) renderAdminSessions();
+            }, (error) => console.error(error));
+
+            const sessionsRef = collection(db, 'artifacts', appId, 'public', 'data', 'app_sessions');
+            onSnapshot(sessionsRef, (snapshot) => {
+                allAppSessions = [];
+                snapshot.forEach(docSnap => allAppSessions.push(docSnap.data()));
+                
+                if(currentUser) {
+                    const myCloudSessions = allAppSessions.filter(s => s.userCell === currentUser.cell);
+                    if(myCloudSessions.length === 0 && currentSessionId) {
+                        currentSessionId = null; 
+                    } else if (currentSessionId && !myCloudSessions.find(s => s.id === currentSessionId)) {
+                        currentSessionId = myCloudSessions[0].id; 
+                    }
+                    renderSessionSelect();
+                    renderBibliography();
+                }
+                if(isAdminLoggedIn) renderAdminSessions();
+            }, (error) => console.error(error));
+        };
+
+        // ==========================================
+        // LOCAL STATE & SETTINGS MANAGEMENT
+        // ==========================================
+        let currentSessionId = null;
+        let currentUser = null; 
+        let admins = [{ username: 'Tahir', pwd: '7869' }];
+        let isAdminLoggedIn = false;
+        let appMode = 'general';
         let textIntroRaw = "";
         let textArabicRaw = "";
 
-        // ==========================================
-        // INITIALIZATION
-        // ==========================================
-        document.addEventListener('DOMContentLoaded', () => {
-            loadData();
-            renderBookSelect();
-            renderDatabaseTable();
-            renderBibliography();
-        });
+        let formatSettings = {
+            urdu: { deathYear: true, rahmatullah: false },
+            arabic: [
+                { id: 'title', label: 'Book Title (اسم الكتاب)', active: true },
+                { id: 'kitab', label: 'Kitab / Bab / Tahta (كتاب/باب)', active: true },
+                { id: 'volpage', label: 'Volume & Page (الجزء/الصفحة)', active: true },
+                { id: 'hadith', label: 'Hadith No (رقم الحديث)', active: true },
+                { id: 'publisher', label: 'Publisher (المطبعة)', active: true },
+                { id: 'place', label: 'Place (مكان الطبع)', active: true },
+                { id: 'edition', label: 'Edition (الطبعة)', active: true },
+                { id: 'pubyear', label: 'Pub Year (سنة الطبع)', active: true }
+            ]
+        };
 
-        function loadData() {
-            const storedBooks = localStorage.getItem('islamic_citation_books_v5');
-            const storedRefs = localStorage.getItem('islamic_citation_refs_v5');
-            if (storedBooks) books = JSON.parse(storedBooks);
-            if (storedRefs) usedReferences = JSON.parse(storedRefs);
-        }
+        try {
+            const storedUser = localStorage.getItem('islamic_citation_current_user_v9');
+            if(storedUser) currentUser = JSON.parse(storedUser);
 
-        function saveData() {
-            localStorage.setItem('islamic_citation_books_v5', JSON.stringify(books));
-            localStorage.setItem('islamic_citation_refs_v5', JSON.stringify(usedReferences));
-            renderBookSelect();
-            renderDatabaseTable();
-        }
+            const storedAdmins = localStorage.getItem('islamic_citation_admins_v9');
+            if(storedAdmins) admins = JSON.parse(storedAdmins) || [{ username: 'Tahir', pwd: '7869' }];
 
-        // ==========================================
-        // UTILITIES
-        // ==========================================
-        function generateId() {
-            return 'book_' + Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
-        }
-
-        function toArabicDigits(str) {
-            if (!str) return '';
-            const arabicNumbers = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
-            return str.replace(/[0-9]/g, function(w) { return arabicNumbers[+w]; });
-        }
-
-        function showToast(message, type = 'success') {
-            const container = document.getElementById('toast-container');
-            const toast = document.createElement('div');
-            const bgColor = type === 'success' ? 'bg-green-600' : (type === 'error' ? 'bg-red-600' : 'bg-gray-700');
-            toast.className = `${bgColor} text-white px-5 py-3 rounded shadow-lg flex items-center gap-3 toast pointer-events-auto text-sm font-medium`;
-            toast.innerHTML = `<i class="fa-solid ${type === 'success' ? 'fa-check-circle' : 'fa-circle-info'} text-lg"></i> <span>${message}</span>`;
-            container.appendChild(toast);
-            setTimeout(() => { toast.remove(); }, 3000);
-        }
-
-        function switchTab(tabName) {
-            document.getElementById('view-citation').classList.add('hidden');
-            document.getElementById('view-database').classList.add('hidden');
-            document.getElementById('view-bibliography').classList.add('hidden');
+            const storedFmt = localStorage.getItem('islamic_citation_format_v9');
+            if(storedFmt) formatSettings = JSON.parse(storedFmt);
             
-            document.querySelectorAll('header button[id^="tab-"]').forEach(btn => {
-                btn.classList.remove('tab-active', 'bg-white', 'text-primary');
-                btn.classList.add('tab-inactive', 'text-white');
-            });
-
-            document.getElementById(`view-${tabName}`).classList.remove('hidden');
+            document.getElementById('fmt-deathyear').checked = formatSettings.urdu.deathYear;
+            document.getElementById('fmt-rahmatullah').checked = formatSettings.urdu.rahmatullah;
             
-            const activeTabBtn = document.getElementById(`tab-${tabName}`);
-            activeTabBtn.classList.remove('tab-inactive', 'text-white');
-            activeTabBtn.classList.add('tab-active', 'bg-white', 'text-primary');
+            renderStyleList();
+            updateUserUI();
+        } catch(e) {}
+
+        function saveLocalData() {
+            localStorage.setItem('islamic_citation_current_user_v9', JSON.stringify(currentUser));
+            localStorage.setItem('islamic_citation_admins_v9', JSON.stringify(admins));
+            localStorage.setItem('islamic_citation_format_v9', JSON.stringify(formatSettings));
         }
 
         // ==========================================
-        // DATABASE FUNCTIONS (TAB 2)
+        // CUSTOM SECURE DIALOG
         // ==========================================
-        function renderDatabaseTable() {
-            const tbody = document.getElementById('db-table-body');
-            const searchInput = document.getElementById('search-db');
-            const searchTerm = searchInput ? searchInput.value.toLowerCase() : '';
-            
-            tbody.innerHTML = '';
-            
-            const filteredBooks = books.filter(b => 
-                (b.title && b.title.toLowerCase().includes(searchTerm)) || 
-                (b.authorName && b.authorName.toLowerCase().includes(searchTerm)) ||
-                (b.publisher && b.publisher.toLowerCase().includes(searchTerm))
-            );
-
-            // Sort alphabetically for the table
-            filteredBooks.sort((a, b) => a.title.localeCompare(b.title));
-
-            filteredBooks.forEach(book => {
-                const tr = document.createElement('tr');
-                tr.className = "hover:bg-gray-50 border-b";
+        function showDialog(options) {
+            return new Promise((resolve) => {
+                document.getElementById('dialog-title').innerText = options.title || '';
+                document.getElementById('dialog-message').innerText = options.message || '';
+                const inputEl = document.getElementById('dialog-input');
                 
-                const editionYearStr = [book.edition, book.pubYear].filter(Boolean).join(' - ') || '-';
-
-                tr.innerHTML = `
-                    <td class="p-3 font-semibold text-primary font-arabic text-right rtl-input" dir="rtl">${book.title || '-'}</td>
-                    <td class="p-3 text-sm text-gray-700 font-arabic text-right rtl-input" dir="rtl">${book.authorName || '-'}</td>
-                    <td class="p-3 text-sm text-gray-600 font-arabic text-right rtl-input" dir="rtl">${book.publisher || '-'}</td>
-                    <td class="p-3 text-sm text-gray-500 font-arabic text-right rtl-input" dir="rtl">${editionYearStr}</td>
-                    <td class="p-3 text-center flex gap-1 justify-center">
-                        <button onclick="editBook('${book.id}')" class="text-blue-600 bg-blue-50 hover:bg-blue-200 p-2 rounded transition" title="Edit"><i class="fa-solid fa-pen"></i></button>
-                        <button onclick="deleteBook('${book.id}')" class="text-red-600 bg-red-50 hover:bg-red-200 p-2 rounded transition" title="Delete"><i class="fa-solid fa-trash"></i></button>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
-            
-            if (filteredBooks.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-gray-400">No books found in the library.</td></tr>`;
-            }
-        }
-
-        function importCSV(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const text = e.target.result;
-                const lines = text.split('\n');
-                if (lines.length < 2) return;
-
-                const parseLine = (line) => {
-                    const result = [];
-                    let inQuotes = false;
-                    let current = '';
-                    for (let i = 0; i < line.length; i++) {
-                        const char = line[i];
-                        if (char === '"' && line[i+1] === '"') { current += '"'; i++; } 
-                        else if (char === '"') { inQuotes = !inQuotes; }
-                        else if (char === ',' && !inQuotes) { result.push(current); current = ''; }
-                        else { current += char; }
-                    }
-                    result.push(current);
-                    return result.map(s => s.trim());
-                };
-
-                const headers = parseLine(lines[0]);
-                let importedCount = 0;
-                let skippedCount = 0;
-
-                for (let i = 1; i < lines.length; i++) {
-                    if (!lines[i].trim()) continue;
-                    const values = parseLine(lines[i]);
-                    
-                    const getVal = (headerName) => {
-                        const idx = headers.findIndex(h => h.includes(headerName));
-                        return idx !== -1 && values[idx] ? values[idx] : '';
-                    };
-
-                    const title = getVal('Title');
-                    if (!title) continue;
-                    
-                    const authorName = getVal('Author');
-                    const publisher = getVal('Publisher');
-                    const edition = getVal('Edition');
-                    const pubYear = getVal('Publication Year (AH/CE)');
-
-                    // STRICT DUPLICATE CHECK
-                    const exists = books.some(b => 
-                        b.title === title && 
-                        b.publisher === publisher &&
-                        b.edition === edition
-                    );
-                    
-                    if (exists) {
-                        skippedCount++;
-                        continue; 
-                    }
-
-                    const newBook = {
-                        id: generateId(),
-                        title: title,
-                        authorName: authorName, 
-                        deathYear: getVal('Death Year (AH)'),
-                        publisher: publisher,
-                        place: getVal('Place'),
-                        edition: edition,
-                        pubYear: pubYear
-                    };
-                    books.push(newBook);
-                    importedCount++;
-                }
-
-                saveData();
-                let msg = `Imported ${importedCount} new books.`;
-                if(skippedCount > 0) msg += ` (Skipped ${skippedCount} exact duplicates)`;
-                showToast(msg);
-                event.target.value = ''; 
-            };
-            reader.readAsText(file, 'utf-8');
-        }
-
-        function removeExactDuplicates() {
-            const uniqueBooks = [];
-            const seenSignatures = new Set();
-            let removedCount = 0;
-
-            books.forEach(book => {
-                const signature = `${book.title}|${book.authorName}|${book.publisher}|${book.edition}`.toLowerCase().trim();
-                
-                if (seenSignatures.has(signature)) {
-                    removedCount++;
+                if (options.type === 'prompt') {
+                    inputEl.classList.remove('hidden');
+                    inputEl.value = options.defaultValue || '';
+                    inputEl.placeholder = options.placeholder || '';
+                    setTimeout(() => inputEl.focus(), 100);
                 } else {
-                    seenSignatures.add(signature);
-                    uniqueBooks.push(book);
+                    inputEl.classList.add('hidden');
                 }
+
+                document.getElementById('dialog-modal').classList.remove('hidden');
+                document.getElementById('dialog-modal').classList.add('flex');
+
+                document.getElementById('dialog-cancel').onclick = () => {
+                    document.getElementById('dialog-modal').classList.add('hidden');
+                    document.getElementById('dialog-modal').classList.remove('flex');
+                    resolve(null);
+                };
+                document.getElementById('dialog-confirm').onclick = () => {
+                    const val = options.type === 'prompt' ? inputEl.value.trim() : true;
+                    document.getElementById('dialog-modal').classList.add('hidden');
+                    document.getElementById('dialog-modal').classList.remove('flex');
+                    resolve(val);
+                };
             });
-
-            if (removedCount > 0) {
-                books = uniqueBooks;
-                saveData();
-                showToast(`Cleaned ${removedCount} exact duplicate copies successfully.`);
-            } else {
-                showToast('Library is clean! No exact duplicates found.', 'info');
-            }
-        }
-
-        function openBookModal() {
-            document.getElementById('edit-id').value = '';
-            document.getElementById('edit-title').value = '';
-            document.getElementById('edit-authorname').value = '';
-            document.getElementById('edit-deathyear').value = '';
-            document.getElementById('edit-publisher').value = '';
-            document.getElementById('edit-place').value = '';
-            document.getElementById('edit-edition').value = '';
-            document.getElementById('edit-pubyear').value = '';
-            
-            document.getElementById('modal-title').innerText = 'Add New Book';
-            document.getElementById('book-modal').classList.remove('hidden');
-            document.getElementById('book-modal').classList.add('flex');
-        }
-
-        function closeBookModal() {
-            document.getElementById('book-modal').classList.add('hidden');
-            document.getElementById('book-modal').classList.remove('flex');
-        }
-
-        function editBook(id) {
-            const book = books.find(b => b.id === id);
-            if (!book) return;
-
-            document.getElementById('edit-id').value = book.id;
-            document.getElementById('edit-title').value = book.title || '';
-            document.getElementById('edit-authorname').value = book.authorName || '';
-            document.getElementById('edit-deathyear').value = book.deathYear || '';
-            document.getElementById('edit-publisher').value = book.publisher || '';
-            document.getElementById('edit-place').value = book.place || '';
-            document.getElementById('edit-edition').value = book.edition || '';
-            document.getElementById('edit-pubyear').value = book.pubYear || '';
-
-            document.getElementById('modal-title').innerText = 'Edit Book';
-            document.getElementById('book-modal').classList.remove('hidden');
-            document.getElementById('book-modal').classList.add('flex');
-        }
-
-        function saveBook() {
-            const id = document.getElementById('edit-id').value;
-            const title = document.getElementById('edit-title').value.trim();
-            
-            if (!title) {
-                showToast('Book Title is required!', 'error');
-                return;
-            }
-
-            const bookData = {
-                title: title,
-                authorName: document.getElementById('edit-authorname').value.trim(),
-                deathYear: document.getElementById('edit-deathyear').value.trim(),
-                publisher: document.getElementById('edit-publisher').value.trim(),
-                place: document.getElementById('edit-place').value.trim(),
-                edition: document.getElementById('edit-edition').value.trim(),
-                pubYear: document.getElementById('edit-pubyear').value.trim()
-            };
-
-            if (id) {
-                const index = books.findIndex(b => b.id === id);
-                if (index !== -1) books[index] = { ...books[index], ...bookData };
-                showToast('Book updated successfully');
-            } else {
-                books.push({ id: generateId(), ...bookData });
-                showToast('Book added successfully');
-            }
-
-            saveData();
-            closeBookModal();
-        }
-
-        function deleteBook(id) {
-            if (!confirm('Are you sure you want to delete this book? This action cannot be undone.')) return;
-            books = books.filter(b => b.id !== id);
-            saveData(); 
-            showToast('Book deleted successfully');
         }
 
         // ==========================================
-        // CITATION BUILDER (TAB 1)
+        // UI & NAVIGATION LOGIC
         // ==========================================
-        function renderBookSelect() {
-            const select = document.getElementById('book-select');
-            const currentValue = select.value; 
+        function switchTab(tabName) {
+            ['home', 'citation', 'database', 'bibliography', 'style', 'settings'].forEach(id => {
+                document.getElementById(`view-${id}`).classList.add('hidden');
+                document.getElementById(`view-${id}`).classList.remove('block');
+            });
+            const navTabs = document.getElementById('nav-tabs');
+            if(tabName === 'home') navTabs.classList.add('hidden');
+            else { navTabs.classList.remove('hidden'); navTabs.classList.add('flex'); }
             
-            select.innerHTML = '<option value="">-- Select Book --</option>';
+            document.querySelectorAll('#nav-tabs button').forEach(btn => {
+                btn.classList.remove('tab-active'); btn.classList.add('tab-inactive');
+            });
             
-            const sortedBooks = [...books].sort((a, b) => a.title.localeCompare(b.title));
+            document.getElementById(`view-${tabName}`).classList.remove('hidden');
+            document.getElementById(`view-${tabName}`).classList.add('block');
             
-            sortedBooks.forEach(book => {
+            if(tabName !== 'home') {
+                const tabBtn = document.getElementById(`tab-${tabName}`);
+                if(tabBtn) { tabBtn.classList.remove('tab-inactive'); tabBtn.classList.add('tab-active'); }
+            }
+        }
+
+        function startCitationMode(mode) {
+            appMode = mode;
+            if (mode === 'session') {
+                if (!currentUser) {
+                    document.getElementById('user-reg-modal').classList.remove('hidden');
+                    document.getElementById('user-reg-modal').classList.add('flex');
+                    return;
+                }
+                ensureUserSessionCloud();
+            } else {
+                document.getElementById('citation-mode-banner').className = 'mb-6 rounded-lg p-4 font-bold flex items-center justify-center gap-2 shadow bg-blue-50 border border-blue-200 text-blue-800';
+                document.getElementById('citation-mode-banner').innerHTML = `<i class="fa-solid fa-feather text-xl"></i> General Mode (Citations not saved to any session)`;
+                switchTab('citation');
+            }
+        }
+
+        function updateUserUI() {
+            const greeting = document.getElementById('user-greeting');
+            if(currentUser) { 
+                greeting.textContent = `${currentUser.name}`; 
+                greeting.classList.remove('hidden'); 
+            } else { 
+                greeting.classList.add('hidden'); 
+            }
+        }
+
+        // ==========================================
+        // USER AUTH & REGISTRATION LOGIC
+        // ==========================================
+        async function registerUser() {
+            if(!firebaseUser) return showToast('Cloud Connection Required', 'error');
+
+            const name = document.getElementById('reg-name').value.trim();
+            const cell = document.getElementById('reg-cell').value.trim();
+            if (!name || !cell) return showToast('Name and Cell Number are required', 'error'); 
+            
+            const existingUser = allAppUsers.find(u => u.cell === cell);
+            if (existingUser) {
+                showToast(`Cell recognized. Welcome back, ${existingUser.name}!`);
+                currentUser = { name: existingUser.name, cell: existingUser.cell };
+            } else {
+                currentUser = { name, cell };
+                try {
+                    const userRef = doc(db, 'artifacts', appId, 'public', 'data', 'app_users', cell);
+                    await setDoc(userRef, { name, cell, registeredAt: Date.now() });
+                    showToast(`Registered successfully. Welcome, ${name}!`);
+                } catch(e) {
+                    return showToast('Failed to register on Cloud', 'error');
+                }
+            }
+            
+            saveLocalData();
+            closeRegModal();
+            updateUserUI();
+            ensureUserSessionCloud();
+        }
+
+        function closeRegModal() {
+            document.getElementById('user-reg-modal').classList.add('hidden');
+            document.getElementById('user-reg-modal').classList.remove('flex');
+        }
+
+        function logoutRegularUser() {
+            currentUser = null; currentSessionId = null;
+            saveLocalData(); updateUserUI(); switchTab('home'); 
+            showToast('Signed out successfully');
+        }
+
+        // ==========================================
+        // BIBLIOGRAPHY SESSION LOGIC (CLOUD)
+        // ==========================================
+        async function ensureUserSessionCloud() {
+            if (!currentUser || !firebaseUser) return;
+            
+            const mySessions = allAppSessions.filter(s => s.userCell === currentUser.cell);
+            
+            if (mySessions.length === 0) {
+                const sessId = 'sess_' + Date.now();
+                const sessionData = { id: sessId, name: 'Default Session', userCell: currentUser.cell, refs: [] };
+                try {
+                    const sRef = doc(db, 'artifacts', appId, 'public', 'data', 'app_sessions', sessId);
+                    await setDoc(sRef, sessionData);
+                    currentSessionId = sessId;
+                } catch(e) { console.error(e); }
+            } else if (!mySessions.find(s => s.id === currentSessionId)) {
+                currentSessionId = mySessions[0].id;
+            }
+            
+            renderSessionSelect();
+            renderBibliography();
+            
+            const currentSession = allAppSessions.find(s => s.id === currentSessionId);
+            const sessionName = currentSession ? currentSession.name : 'Active Session';
+            
+            document.getElementById('citation-mode-banner').className = 'mb-6 rounded-lg p-4 font-bold flex items-center justify-center gap-2 shadow bg-green-50 border border-green-300 text-green-800';
+            document.getElementById('citation-mode-banner').innerHTML = `<i class="fa-solid fa-lock text-xl"></i> Securely Saving to Session: ${sessionName}`;
+            switchTab('citation');
+        }
+
+        function renderSessionSelect() {
+            if (!currentUser) return;
+            const select = document.getElementById('session-select');
+            select.innerHTML = '';
+            const mySessions = allAppSessions.filter(s => s.userCell === currentUser.cell);
+            
+            mySessions.forEach(s => {
                 const opt = document.createElement('option');
-                opt.value = book.id;
-                let label = book.title;
-                if(book.publisher) label += ` [${book.publisher}]`;
-                opt.textContent = label;
+                opt.value = s.id; opt.textContent = s.name;
+                if (s.id === currentSessionId) opt.selected = true;
                 select.appendChild(opt);
             });
+        }
 
-            if (currentValue && books.find(b => b.id === currentValue)) {
-                select.value = currentValue;
+        async function createNewSession() {
+            if(!currentUser || !firebaseUser) return;
+            const name = await showDialog({ title: 'New Session', message: 'Enter a name for the new session:', type: 'prompt', placeholder: 'e.g., Fatwa on Zakat' });
+            if (!name) return;
+            
+            const sessId = 'sess_' + Date.now();
+            const sessionData = { id: sessId, name: name, userCell: currentUser.cell, refs: [] };
+            
+            try {
+                document.getElementById('cloud-syncing').classList.remove('hidden');
+                const sRef = doc(db, 'artifacts', appId, 'public', 'data', 'app_sessions', sessId);
+                await setDoc(sRef, sessionData);
+                currentSessionId = sessId;
+                document.getElementById('cloud-syncing').classList.add('hidden');
+                showToast('New session created via Cloud');
+            } catch(e) {
+                showToast('Cloud error', 'error');
+            }
+        }
+        
+        async function renameSession() { 
+            const session = allAppSessions.find(s => s.id === currentSessionId); 
+            if(!session || !firebaseUser) return;
+            
+            const name = await showDialog({ title: 'Rename Session', message: 'Enter new name:', type: 'prompt', defaultValue: session.name });
+            if (name) { 
+                try {
+                    document.getElementById('cloud-syncing').classList.remove('hidden');
+                    const sRef = doc(db, 'artifacts', appId, 'public', 'data', 'app_sessions', currentSessionId);
+                    await setDoc(sRef, { name: name }, { merge: true });
+                    document.getElementById('cloud-syncing').classList.add('hidden');
+                    showToast('Session renamed in Cloud'); 
+                } catch(e) {}
+            } 
+        }
+        
+        function changeSession(id) { 
+            currentSessionId = id; 
+            renderBibliography(); 
+            if(appMode === 'session') {
+                const currentSession = allAppSessions.find(s => s.id === currentSessionId);
+                if(currentSession) {
+                    document.getElementById('citation-mode-banner').innerHTML = `<i class="fa-solid fa-lock text-xl"></i> Securely Saving to Session: ${currentSession.name}`;
+                }
             }
         }
 
-        function clearCitationFields() {
-            document.getElementById('dyn-kitab').value = '';
-            document.getElementById('dyn-bab').value = '';
-            document.getElementById('dyn-tahta').value = '';
-            document.getElementById('dyn-vol').value = '';
-            document.getElementById('dyn-page').value = '';
-            document.getElementById('dyn-hadith').value = '';
-            showToast('Input fields cleared', 'info');
+        async function addToBibliography(book) {
+            const session = allAppSessions.find(s => s.id === currentSessionId);
+            if (!session || !firebaseUser) return;
+            
+            if (!session.refs.find(r => r.id === book.id)) { 
+                const newRefs = [...session.refs, book];
+                try {
+                    document.getElementById('cloud-syncing').classList.remove('hidden');
+                    const sRef = doc(db, 'artifacts', appId, 'public', 'data', 'app_sessions', currentSessionId);
+                    await setDoc(sRef, { refs: newRefs }, { merge: true });
+                    document.getElementById('cloud-syncing').classList.add('hidden');
+                } catch(e) { console.error(e); }
+            }
         }
 
-        function generateCitation() {
-            const bookId = document.getElementById('book-select').value;
-            if (!bookId) {
-                showToast('Please select a book first', 'error');
+        function renderBibliography() {
+            const container = document.getElementById('bibliography-output');
+            const session = allAppSessions.find(s => s.id === currentSessionId);
+            
+            if (!session || session.refs.length === 0) {
+                container.innerHTML = '<div class="text-center text-gray-400 font-sans text-sm mt-10"><i class="fa-solid fa-folder-open text-4xl mb-3 block"></i> No references added yet.</div>'; 
                 return;
             }
+            
+            let listHTML = '<div class="space-y-4 font-arabic text-xl">';
+            session.refs.forEach((book, index) => {
+                const elements = [];
+                formatSettings.arabic.forEach(fmt => {
+                    if(!fmt.active) return;
+                    switch(fmt.id) {
+                        case 'title': if(book.title) elements.push(`<strong class="text-primary">${book.title}</strong>`); break;
+                        case 'publisher': if(book.publisher) elements.push(`مطبوعة ${book.publisher}`); break;
+                        case 'place': if(book.place) elements.push(book.place); break;
+                        case 'edition': if(book.edition) elements.push(book.edition); break;
+                        case 'pubyear': if(book.pubYear) elements.push(toArabicDigits(book.pubYear)); break;
+                    }
+                });
+                let authorStr = book.authorName || '';
+                if (book.deathYear) authorStr += ` (متوفى ${toArabicDigits(book.deathYear)})`;
+                if(authorStr) elements.splice(1, 0, authorStr);
+                
+                let htmlStr = `<div class="flex items-start gap-4 p-3 bg-white rounded-lg border border-gray-200 shadow-sm relative group transition-all">
+                    <div class="flex flex-col items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity absolute left-2 top-2 bg-gray-50 p-1.5 rounded-lg border border-gray-200 shadow-sm z-10">
+                        <button onclick="window.moveBibItem(${index}, -1)" class="text-gray-400 hover:text-primary p-1 rounded hover:bg-white" title="Move Up"><i class="fa-solid fa-arrow-up"></i></button>
+                        <button onclick="window.moveBibItem(${index}, 1)" class="text-gray-400 hover:text-primary p-1 rounded hover:bg-white" title="Move Down"><i class="fa-solid fa-arrow-down"></i></button>
+                        <div class="border-t border-gray-300 w-full my-0.5"></div>
+                        <button onclick="window.removeBibItem(${index})" class="text-red-400 hover:text-red-600 p-1 rounded hover:bg-white" title="Remove"><i class="fa-solid fa-trash"></i></button>
+                    </div>
+                    <div class="font-bold text-gray-400 select-none">${index + 1}.</div>
+                    <div class="flex-grow leading-loose pl-12 text-gray-800">
+                        ${elements.join('، ')}
+                    </div>
+                </div>`;
+                listHTML += htmlStr;
+            });
+            listHTML += '</div>';
+            container.innerHTML = listHTML;
+        }
+
+        function moveBibItem(index, direction) {
+            const session = allAppSessions.find(s => s.id === currentSessionId);
+            if (!session || !firebaseUser) return;
+            const newIndex = index + direction;
+            if (newIndex < 0 || newIndex >= session.refs.length) return;
+            
+            const temp = session.refs[index];
+            session.refs[index] = session.refs[newIndex];
+            session.refs[newIndex] = temp;
+            
+            document.getElementById('cloud-syncing').classList.remove('hidden');
+            const sRef = doc(db, 'artifacts', appId, 'public', 'data', 'app_sessions', currentSessionId);
+            setDoc(sRef, { refs: session.refs }, { merge: true }).then(() => {
+                document.getElementById('cloud-syncing').classList.add('hidden');
+            });
+        }
+
+        function removeBibItem(index) {
+            const session = allAppSessions.find(s => s.id === currentSessionId);
+            if (!session || !firebaseUser) return;
+            session.refs.splice(index, 1);
+            
+            document.getElementById('cloud-syncing').classList.remove('hidden');
+            const sRef = doc(db, 'artifacts', appId, 'public', 'data', 'app_sessions', currentSessionId);
+            setDoc(sRef, { refs: session.refs }, { merge: true }).then(() => {
+                document.getElementById('cloud-syncing').classList.add('hidden');
+            });
+        }
+        
+        function sortBibliography() {
+            const session = allAppSessions.find(s => s.id === currentSessionId);
+            if (!session || !firebaseUser) return;
+            
+            session.refs.sort((a, b) => (a.title || '').localeCompare(b.title || ''));
+            
+            document.getElementById('cloud-syncing').classList.remove('hidden');
+            const sRef = doc(db, 'artifacts', appId, 'public', 'data', 'app_sessions', currentSessionId);
+            setDoc(sRef, { refs: session.refs }, { merge: true }).then(() => {
+                document.getElementById('cloud-syncing').classList.add('hidden');
+                showToast('Bibliography Sorted A-Z');
+            });
+        }
+
+        async function clearBibliography() {
+            const session = allAppSessions.find(s => s.id === currentSessionId);
+            if (!session || session.refs.length === 0 || !firebaseUser) return;
+            
+            const confirmed = await showDialog({ title: 'Clear List', message: `Wipe all references inside "${session.name}"?`, type: 'confirm' });
+            if (!confirmed) return;
+            
+            try {
+                document.getElementById('cloud-syncing').classList.remove('hidden');
+                const sRef = doc(db, 'artifacts', appId, 'public', 'data', 'app_sessions', currentSessionId);
+                await setDoc(sRef, { refs: [] }, { merge: true });
+                document.getElementById('cloud-syncing').classList.add('hidden');
+                showToast('Session list cleared');
+            } catch(e){}
+        }
+
+        function copyBibliography() {
+            const session = allAppSessions.find(s => s.id === currentSessionId);
+            if (!session || session.refs.length === 0) return showToast('Bibliography is empty', 'error');
+            
+            let plainTextList = "";
+            session.refs.forEach((book, index) => {
+                const elements = [];
+                formatSettings.arabic.forEach(fmt => {
+                    if(!fmt.active) return;
+                    switch(fmt.id) {
+                        case 'title': if(book.title) elements.push(book.title); break;
+                        case 'publisher': if(book.publisher) elements.push(`مطبوعة ${book.publisher}`); break;
+                        case 'place': if(book.place) elements.push(book.place); break;
+                        case 'edition': if(book.edition) elements.push(book.edition); break;
+                        case 'pubyear': if(book.pubYear) elements.push(toArabicDigits(book.pubYear)); break;
+                    }
+                });
+                let authorStr = book.authorName || '';
+                if (book.deathYear) authorStr += ` (متوفى ${toArabicDigits(book.deathYear)})`;
+                if(authorStr) elements.splice(1, 0, authorStr);
+
+                plainTextList += `${index + 1}. ${elements.join('، ')}\n`;
+            });
+            const textArea = document.createElement("textarea"); textArea.value = plainTextList; document.body.appendChild(textArea); textArea.select(); document.execCommand('copy'); document.body.removeChild(textArea); showToast('Bibliography copied to clipboard!');
+        }
+        
+        function downloadWordDoc() {
+            const session = allAppSessions.find(s => s.id === currentSessionId);
+            if (!session || session.refs.length === 0) return showToast('Bibliography is empty', 'error');
+            
+            let html = `<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+                <head><meta charset='utf-8'><title>Bibliography</title></head>
+                <body dir='rtl' style='font-family: Arial, "Times New Roman", serif; font-size: 16pt; line-height: 2.2; text-align: right;'>`;
+            
+            html += "<h1 style='text-align: center; color: #1a4a1a;'>" + session.name + "</h1>";
+            html += "<ol style='padding-right: 30px; text-align: right;' dir='rtl'>";
+            
+            session.refs.forEach((book) => {
+                const elements = [];
+                formatSettings.arabic.forEach(fmt => {
+                    if(!fmt.active) return;
+                    switch(fmt.id) {
+                        case 'title': if(book.title) elements.push(`<strong>${book.title}</strong>`); break;
+                        case 'publisher': if(book.publisher) elements.push(`مطبوعة ${book.publisher}`); break;
+                        case 'place': if(book.place) elements.push(book.place); break;
+                        case 'edition': if(book.edition) elements.push(book.edition); break;
+                        case 'pubyear': if(book.pubYear) elements.push(toArabicDigits(book.pubYear)); break;
+                    }
+                });
+                let authorStr = book.authorName || '';
+                if (book.deathYear) authorStr += ` (متوفى ${toArabicDigits(book.deathYear)})`;
+                if(authorStr) elements.splice(1, 0, authorStr);
+
+                html += `<li style="margin-bottom: 15px; text-align: right;" dir="rtl">${elements.join('، ')}</li>`;
+            });
+            
+            html += "</ol></body></html>";
+            
+            const blob = new Blob(['\ufeff', html], { type: 'application/msword' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = (session.name || 'Bibliography') + '.doc';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            showToast('MS Word Document Downloaded!');
+        }
+
+        // ==========================================
+        // CITATION BUILDER (GENERAL)
+        // ==========================================
+        function generateCitation() {
+            const bookId = document.getElementById('book-select').value;
+            if (!bookId) return showToast('Please select a book first', 'error'); 
 
             const book = books.find(b => b.id === bookId);
-            
             const dynData = {
                 kitab: document.getElementById('dyn-kitab').value.trim(),
                 bab: document.getElementById('dyn-bab').value.trim(),
@@ -671,200 +1118,552 @@
                 hadith: toArabicDigits(document.getElementById('dyn-hadith').value.trim())
             };
 
-            // 1. Build Intro String (Urdu Style)
             let introText = "";
             if (book.authorName) introText += book.authorName + " ";
-            if (book.deathYear) introText += `متوفی ${toArabicDigits(book.deathYear)} `;
-            
-            if(introText) introText = introText.trim() + " لکھتے ہیں:";
+            if (formatSettings.urdu.rahmatullah && book.authorName) introText += "(رحمہ اللہ) ";
+            if (formatSettings.urdu.deathYear && book.deathYear) introText += `متوفی ${toArabicDigits(book.deathYear)} `;
+            if(introText.trim()) introText = introText.trim() + " لکھتے ہیں:";
             else introText = "صاحبِ کتاب لکھتے ہیں:"; 
 
-            // 2. Build Citation Array (Arabic Style)
             const citationElements = [];
-            
-            citationElements.push(book.title);
-            if (dynData.kitab) citationElements.push(dynData.kitab);
-            if (dynData.bab) citationElements.push(dynData.bab);
-            if (dynData.tahta) citationElements.push(dynData.tahta);
-            
-            let volPage = "";
-            if (dynData.vol && dynData.page) volPage = `${dynData.vol} / ${dynData.page}`;
-            else if (dynData.vol) volPage = `ج ${dynData.vol}`;
-            else if (dynData.page) volPage = `ص ${dynData.page}`;
-            if (volPage) citationElements.push(volPage);
-            
-            if (dynData.hadith) citationElements.push(`رقم: ${dynData.hadith}`);
-            
-            if (book.publisher) citationElements.push(`مطبوعة ${book.publisher}`);
-            if (book.place) citationElements.push(book.place);
-            if (book.edition) citationElements.push(book.edition);
-            if (book.pubYear) citationElements.push(toArabicDigits(book.pubYear));
+            formatSettings.arabic.forEach(fmt => {
+                if(!fmt.active) return;
+                switch(fmt.id) {
+                    case 'title': if(book.title) citationElements.push(book.title); break;
+                    case 'kitab': 
+                        if (dynData.kitab) citationElements.push(dynData.kitab);
+                        if (dynData.bab) citationElements.push(dynData.bab);
+                        if (dynData.tahta) citationElements.push(dynData.tahta);
+                        break;
+                    case 'volpage':
+                        let vp = "";
+                        if (dynData.vol && dynData.page) vp = `${dynData.vol} / ${dynData.page}`;
+                        else if (dynData.vol) vp = `ج ${dynData.vol}`;
+                        else if (dynData.page) vp = `ص ${dynData.page}`;
+                        if (vp) citationElements.push(vp);
+                        break;
+                    case 'hadith': if(dynData.hadith) citationElements.push(`رقم: ${dynData.hadith}`); break;
+                    case 'publisher': if(book.publisher) citationElements.push(`مطبوعة ${book.publisher}`); break;
+                    case 'place': if(book.place) citationElements.push(book.place); break;
+                    case 'edition': if(book.edition) citationElements.push(book.edition); break;
+                    case 'pubyear': if(book.pubYear) citationElements.push(toArabicDigits(book.pubYear)); break;
+                }
+            });
 
             const citationString = "(" + citationElements.join('، ') + ")";
-
-            // Store pure text for copying
             textIntroRaw = introText;
             textArabicRaw = citationString;
 
-            // Render to UI
             document.getElementById('citation-placeholder').classList.add('hidden');
             document.getElementById('citation-container').classList.remove('hidden');
-            
             document.getElementById('out-intro').innerText = textIntroRaw;
             document.getElementById('out-arabic').innerText = textArabicRaw;
 
-            addToBibliography(book);
+            if (appMode === 'session' && currentUser) addToBibliography(book);
         }
 
-        // Copy Handler System
         async function copyCitation(type) {
-            if (!textIntroRaw || !textArabicRaw) {
-                showToast('Generate a citation first', 'error');
+            if (!textIntroRaw || !textArabicRaw) return showToast('Generate a citation first', 'error');
+            let textToCopy = type === 'intro' ? textIntroRaw : (type === 'arabic' ? textArabicRaw : `${textIntroRaw} ${textArabicRaw}`);
+            try { 
+                const t = document.createElement("textarea"); t.value = textToCopy; 
+                document.body.appendChild(t); t.select(); document.execCommand('copy'); 
+                document.body.removeChild(t); showToast('Copied to clipboard'); 
+            } catch(e) { showToast('Copy failed', 'error'); }
+        }
+
+        function clearCitationFields() { 
+            ['dyn-kitab', 'dyn-bab', 'dyn-tahta', 'dyn-vol', 'dyn-page', 'dyn-hadith'].forEach(id => document.getElementById(id).value = ''); 
+            showToast('Input fields cleared', 'info'); 
+        }
+
+        // ==========================================
+        // CITATION STYLE FORMATTER LOGIC
+        // ==========================================
+        function updateFormatSettings() {
+            formatSettings.urdu.deathYear = document.getElementById('fmt-deathyear').checked;
+            formatSettings.urdu.rahmatullah = document.getElementById('fmt-rahmatullah').checked;
+            saveLocalData();
+            showToast('Intro format saved securely');
+        }
+
+        function renderStyleList() {
+            const list = document.getElementById('format-list');
+            list.innerHTML = '';
+            formatSettings.arabic.forEach((item, index) => {
+                const div = document.createElement('div');
+                div.className = "flex items-center justify-between bg-white border border-gray-200 p-4 rounded-lg shadow-sm hover:border-gold transition";
+                div.innerHTML = `
+                    <div class="flex items-center gap-4">
+                        <input type="checkbox" ${item.active ? 'checked' : ''} onchange="window.toggleFormatActive(${index}, this.checked)" class="form-checkbox h-6 w-6 text-gold rounded focus:ring-gold border-2 border-gray-300">
+                        <span class="font-bold text-lg ${item.active ? 'text-gray-800' : 'text-gray-400 line-through'}">${item.label}</span>
+                    </div>
+                    <div class="flex flex-col gap-2">
+                        <button onclick="window.moveFormat(${index}, -1)" class="text-gray-400 hover:text-primary bg-gray-50 px-3 py-1 rounded border ${index===0?'invisible':''}" title="Move Up"><i class="fa-solid fa-chevron-up"></i></button>
+                        <button onclick="window.moveFormat(${index}, 1)" class="text-gray-400 hover:text-primary bg-gray-50 px-3 py-1 rounded border ${index===formatSettings.arabic.length-1?'invisible':''}" title="Move Down"><i class="fa-solid fa-chevron-down"></i></button>
+                    </div>
+                `;
+                list.appendChild(div);
+            });
+        }
+
+        function toggleFormatActive(index, checked) { formatSettings.arabic[index].active = checked; saveLocalData(); renderStyleList(); }
+        function moveFormat(index, direction) {
+            const newIndex = index + direction;
+            if(newIndex < 0 || newIndex >= formatSettings.arabic.length) return;
+            const temp = formatSettings.arabic[index];
+            formatSettings.arabic[index] = formatSettings.arabic[newIndex];
+            formatSettings.arabic[newIndex] = temp;
+            saveLocalData(); renderStyleList();
+        }
+
+        // ==========================================
+        // ADMIN PANEL LOGIC
+        // ==========================================
+        function openSettings() {
+            if (isAdminLoggedIn) { switchTab('settings'); renderAdminSessions(); }
+            else {
+                document.getElementById('auth-user').value = '';
+                document.getElementById('auth-pwd').value = '';
+                document.getElementById('auth-modal').classList.remove('hidden');
+                document.getElementById('auth-modal').classList.add('flex');
+            }
+        }
+        
+        function closeAuthModal() {
+            document.getElementById('auth-modal').classList.add('hidden');
+            document.getElementById('auth-modal').classList.remove('flex');
+        }
+        
+        function checkAdminPassword() {
+            const u = document.getElementById('auth-user').value.trim();
+            const p = document.getElementById('auth-pwd').value;
+            const valid = admins.find(a => a.username.toLowerCase() === u.toLowerCase() && a.pwd === p);
+            if (valid) {
+                isAdminLoggedIn = true; closeAuthModal(); switchTab('settings'); renderAdminSessions();
+                renderDatabaseTable(); 
+                showToast(`Access Granted. Welcome ${valid.username}.`);
+            } else { showToast('Access Denied', 'error'); }
+        }
+        
+        function logoutAdmin() { 
+            isAdminLoggedIn = false; 
+            switchTab('home'); 
+            renderDatabaseTable(); 
+            showToast('Admin Panel Locked Securely'); 
+        }
+
+        function addAdmin() {
+            const u = document.getElementById('new-admin-user').value.trim();
+            const p = document.getElementById('new-admin-pwd').value;
+            if(!u || p.length < 4) return showToast('Valid username and min 4 char password required', 'error'); 
+            if(admins.find(a => a.username.toLowerCase() === u.toLowerCase())) return showToast('Username already exists', 'error'); 
+            admins.push({ username: u, pwd: p });
+            saveLocalData();
+            document.getElementById('new-admin-user').value = ''; document.getElementById('new-admin-pwd').value = '';
+            showToast('New Super User successfully added');
+        }
+
+        function renderAdminSessions() {
+            const tbody = document.getElementById('admin-session-table');
+            if(!tbody) return;
+            tbody.innerHTML = '';
+            
+            if(allAppSessions.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="3" class="p-6 text-center text-gray-500 font-bold"><i class="fa-solid fa-folder-open text-2xl block mb-2"></i> No active sessions found in Cloud.</td></tr>`;
                 return;
             }
 
-            let textToCopy = "";
-            let msg = "";
-
-            if (type === 'intro') {
-                textToCopy = textIntroRaw;
-                msg = "Urdu intro copied to clipboard";
-            } else if (type === 'arabic') {
-                textToCopy = textArabicRaw;
-                msg = "Arabic reference copied to clipboard";
-            } else if (type === 'both') {
-                textToCopy = `${textIntroRaw} ${textArabicRaw}`;
-                msg = "Full citation copied to clipboard";
-            }
-
+            allAppSessions.forEach(s => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="p-4 border-t font-bold text-gray-800">${s.userCell}</td>
+                    <td class="p-4 border-t text-primary font-bold">${s.name} <span class="text-xs text-gray-600 bg-gray-200 px-2 py-1 rounded-full ml-2 shadow-sm">${s.refs.length} refs</span></td>
+                    <td class="p-4 border-t text-center"><button onclick="window.adminDeleteSession('${s.id}')" class="text-white hover:bg-red-700 bg-red-600 px-3 py-1.5 rounded shadow"><i class="fa-solid fa-trash-can"></i> Delete</button></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+        
+        async function adminDeleteSession(id) {
+            if(!firebaseUser) return showToast('Cloud connection required', 'error');
+            const confirmed = await showDialog({ title: 'Delete Cloud Session?', message: 'This will permanently delete this session for the user across all devices. Proceed?', type: 'confirm' });
+            if(!confirmed) return;
+            
             try {
-                const textArea = document.createElement("textarea");
-                textArea.value = textToCopy;
-                document.body.appendChild(textArea);
-                textArea.select();
-                document.execCommand('copy');
-                document.body.removeChild(textArea);
-                showToast(msg);
+                const sRef = doc(db, 'artifacts', appId, 'public', 'data', 'app_sessions', id);
+                await deleteDoc(sRef);
+                showToast('Session permanently deleted from Cloud');
+            } catch(e) {
+                showToast('Failed to delete', 'error');
+            }
+        }
+
+        // ==========================================
+        // ADMIN BATCH OPERATIONS (FREEZE-PROOF)
+        // ==========================================
+        function openBookModal(bookId = null) { 
+            if(bookId) {
+                const book = books.find(b => b.id === bookId);
+                if(!book) return;
+                document.getElementById('edit-id').value = book.id; 
+                document.getElementById('edit-title').value = book.title || '';
+                document.getElementById('edit-authorname').value = book.authorName || '';
+                document.getElementById('edit-deathyear').value = book.deathYear || '';
+                document.getElementById('edit-publisher').value = book.publisher || '';
+                document.getElementById('edit-place').value = book.place || '';
+                document.getElementById('edit-edition').value = book.edition || '';
+                document.getElementById('edit-pubyear').value = book.pubYear || '';
+                document.getElementById('modal-title').innerHTML = '<i class="fa-solid fa-pen-to-square mr-2 text-blue-500"></i> Edit Book in Cloud';
+            } else {
+                document.getElementById('edit-id').value=''; 
+                document.getElementById('edit-title').value='';
+                document.getElementById('edit-authorname').value='';
+                document.getElementById('edit-deathyear').value='';
+                document.getElementById('edit-publisher').value='';
+                document.getElementById('edit-place').value='';
+                document.getElementById('edit-edition').value='';
+                document.getElementById('edit-pubyear').value='';
+                document.getElementById('modal-title').innerHTML = '<i class="fa-solid fa-cloud-arrow-up mr-2 text-blue-500"></i> Add Book to Cloud DB';
+            }
+            document.getElementById('book-modal').classList.remove('hidden'); 
+            document.getElementById('book-modal').classList.add('flex'); 
+        }
+        
+        function closeBookModal() { 
+            document.getElementById('book-modal').classList.add('hidden'); 
+            document.getElementById('book-modal').classList.remove('flex'); 
+        }
+        
+        async function saveBook() { 
+            if(!firebaseUser) return showToast('Not connected to Cloud. Wait a moment.', 'error');
+            const title = document.getElementById('edit-title').value.trim();
+            if(!title) return showToast('Book Title is required', 'error');
+            
+            const existingId = document.getElementById('edit-id').value;
+            const bookId = existingId || generateId(); 
+            
+            const bookData = {
+                id: bookId,
+                title: title,
+                authorName: document.getElementById('edit-authorname').value.trim(),
+                deathYear: document.getElementById('edit-deathyear').value.trim(),
+                publisher: document.getElementById('edit-publisher').value.trim(),
+                place: document.getElementById('edit-place').value.trim(),
+                edition: document.getElementById('edit-edition').value.trim(),
+                pubYear: document.getElementById('edit-pubyear').value.trim()
+            };
+            
+            closeBookModal(); 
+            document.getElementById('cloud-syncing').classList.remove('hidden');
+            try {
+                const bookRef = doc(db, 'artifacts', appId, 'public', 'data', 'books', bookId);
+                await setDoc(bookRef, bookData, { merge: true });
+                document.getElementById('cloud-syncing').classList.add('hidden');
+                showToast(existingId ? 'Book Updated in Cloud' : 'Book Saved to Cloud'); 
             } catch (err) {
-                showToast('Copy failed', 'error');
+                document.getElementById('cloud-syncing').classList.add('hidden');
+                showToast('Failed to sync to cloud', 'error');
+            }
+        } 
+        
+        async function deleteBook(id) {
+            if(!firebaseUser) return showToast('Cloud connection required', 'error');
+            const confirmed = await showDialog({ title: 'Delete Book?', message: 'This will permanently remove this book from the Master Cloud Library. Proceed?', type: 'confirm' });
+            if(!confirmed) return;
+            
+            try {
+                document.getElementById('cloud-syncing').classList.remove('hidden');
+                const bRef = doc(db, 'artifacts', appId, 'public', 'data', 'books', id);
+                await deleteDoc(bRef);
+                document.getElementById('cloud-syncing').classList.add('hidden');
+                showToast('Book deleted permanently');
+            } catch(e) {
+                showToast('Failed to delete book', 'error');
             }
         }
 
-        // ==========================================
-        // BIBLIOGRAPHY (TAB 3)
-        // ==========================================
-        function addToBibliography(book) {
-            const exists = usedReferences.find(r => r.id === book.id);
-            if (!exists) {
-                usedReferences.push(book);
-                localStorage.setItem('islamic_citation_refs_v5', JSON.stringify(usedReferences));
-                renderBibliography();
-            }
-        }
+        function importCSV(e) { 
+            const file = e.target.files[0];
+            if (!file) return;
 
-        function renderBibliography() {
-            const container = document.getElementById('bibliography-output');
-            container.innerHTML = '';
-            
-            if (usedReferences.length === 0) {
-                container.innerHTML = '<span class="text-gray-400 font-sans text-sm">Bibliography is empty.</span>';
-                return;
-            }
+            const reader = new FileReader();
+            reader.onload = async function(evt) {
+                if(!firebaseUser) return showToast('Not connected to Cloud', 'error');
+                let text = evt.target.result;
+                if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
+                const lines = text.split('\n');
+                if (lines.length < 2) return;
 
-            const sortedRefs = [...usedReferences].sort((a, b) => (a.title || '').localeCompare(b.title || ''));
-            let listHTML = '<ol class="list-decimal list-inside space-y-3 font-arabic text-xl">';
-            
-            sortedRefs.forEach(book => {
-                const elements = [];
-                elements.push(`<strong class="text-primary">${book.title}</strong>`);
+                const parseLine = (line) => {
+                    const result = []; let inQuotes = false, current = '';
+                    for (let i = 0; i < line.length; i++) {
+                        const char = line[i];
+                        if (char === '"' && line[i+1] === '"') { current += '"'; i++; } 
+                        else if (char === '"') { inQuotes = !inQuotes; }
+                        else if (char === ',' && !inQuotes) { result.push(current); current = ''; }
+                        else { current += char; }
+                    }
+                    result.push(current); return result.map(s => s.trim());
+                };
+
+                const headers = parseLine(lines[0]);
+                let importedCount = 0, skippedCount = 0;
+                document.getElementById('cloud-syncing').classList.remove('hidden');
+
+                // Using Batch writes to completely prevent freezing
+                let batch = writeBatch(db);
+                let opCount = 0;
+
+                for (let i = 1; i < lines.length; i++) {
+                    if (!lines[i].trim()) continue;
+                    const values = parseLine(lines[i]);
+                    
+                    const getVal = (name) => { 
+                        const idx = headers.findIndex(h => h && h.toLowerCase().includes(name.toLowerCase())); 
+                        return idx !== -1 && values[idx] ? values[idx] : ''; 
+                    };
+
+                    const title = getVal('Title');
+                    if (!title) continue;
+                    
+                    const publisher = getVal('Publisher');
+                    const edition = getVal('Edition');
+
+                    if (books.some(b => b.title === title && b.publisher === publisher && b.edition === edition)) {
+                        skippedCount++; continue; 
+                    }
+
+                    const newId = generateId();
+                    const bookData = {
+                        id: newId, 
+                        title: title, 
+                        authorName: getVal('Author'), 
+                        deathYear: getVal('Death Year'), 
+                        publisher: publisher,
+                        place: getVal('Place'), 
+                        edition: edition, 
+                        pubYear: getVal('Publication Year')
+                    };
+                    
+                    const bookRef = doc(db, 'artifacts', appId, 'public', 'data', 'books', newId);
+                    batch.set(bookRef, bookData);
+                    importedCount++;
+                    opCount++;
+
+                    // Firestore limit is 500 per batch. Chunking at 450 to be safe.
+                    if (opCount >= 450) {
+                        await batch.commit();
+                        batch = writeBatch(db);
+                        opCount = 0;
+                    }
+                }
                 
-                let authorStr = book.authorName || '';
-                if (book.deathYear) authorStr += ` (متوفى ${toArabicDigits(book.deathYear)})`;
-                if (authorStr) elements.push(authorStr);
+                // Commit any remaining operations
+                if (opCount > 0) {
+                    await batch.commit();
+                }
+                
+                document.getElementById('cloud-syncing').classList.add('hidden');
+                showToast(`Cloud Upload Complete. ${importedCount} added. ${skippedCount} skipped.`);
+                e.target.value = ''; 
+            };
+            reader.readAsText(file, 'utf-8');
+        } 
+        
+        function exportCSV() { 
+            if (books.length === 0) return showToast('No data to export', 'error');
+            const headers = ['Title', 'Author', 'Death Year (AH)', 'Publisher', 'Place', 'Edition', 'Publication Year (AH/CE)'];
+            let csvContent = "\uFEFF" + headers.join(",") + "\n";
 
-                if (book.publisher) elements.push(`مطبوعة ${book.publisher}`);
-                if (book.place) elements.push(book.place);
-                if (book.edition) elements.push(book.edition);
-                if (book.pubYear) elements.push(toArabicDigits(book.pubYear));
-
-                listHTML += `<li>${elements.join('، ')}</li>`;
+            books.forEach(b => {
+                const row = [b.title||'', b.authorName||'', b.deathYear||'', b.publisher||'', b.place||'', b.edition||'', b.pubYear||''];
+                csvContent += row.map(field => {
+                    const str = String(field);
+                    return (str.includes(',') || str.includes('"') || str.includes('\n')) ? `"${str.replace(/"/g, '""')}"` : str;
+                }).join(",") + "\n";
             });
 
-            listHTML += '</ol>';
-            container.innerHTML = listHTML;
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = "Cloud_Library_Database.csv";
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            showToast('Database exported for Excel', 'success'); 
         }
-
-        function clearBibliography() {
-            if (!confirm('Are you sure you want to clear the current bibliography?')) return;
-            usedReferences = [];
-            localStorage.setItem('islamic_citation_refs_v5', JSON.stringify(usedReferences));
-            renderBibliography();
-            showToast('Bibliography cleared');
-        }
-
-        function copyBibliography() {
-            if (usedReferences.length === 0) {
-                showToast('Bibliography is empty', 'error');
-                return;
-            }
+        
+        async function removeExactDuplicates() { 
+            if(!firebaseUser) return showToast('Not connected to Cloud', 'error');
+            const seen = new Set(), duplicates = [];
             
-            const sortedRefs = [...usedReferences].sort((a, b) => (a.title || '').localeCompare(b.title || ''));
-            let plainTextList = "";
-            
-            sortedRefs.forEach((book, index) => {
-                const elements = [];
-                elements.push(book.title);
-                
-                let authorStr = book.authorName || '';
-                if (book.deathYear) authorStr += ` (متوفى ${toArabicDigits(book.deathYear)})`;
-                if (authorStr) elements.push(authorStr);
-                
-                if (book.publisher) elements.push(`مطبوعة ${book.publisher}`);
-                if (book.place) elements.push(book.place);
-                if (book.edition) elements.push(book.edition);
-                if (book.pubYear) elements.push(toArabicDigits(book.pubYear));
-
-                plainTextList += `${index + 1}. ${elements.join('، ')}\n`;
+            books.forEach(b => {
+                const sig = `${b.title}|${b.authorName}|${b.publisher}|${b.edition}`.toLowerCase();
+                if (seen.has(sig)) duplicates.push(b); else seen.add(sig);
             });
 
-            const textArea = document.createElement("textarea");
-            textArea.value = plainTextList;
-            document.body.appendChild(textArea);
-            textArea.select();
-            document.execCommand('copy');
-            document.body.removeChild(textArea);
-            showToast('Bibliography copied to clipboard!');
-        }
-
-        // ==========================================
-        // SYSTEM FUNCTIONS
-        // ==========================================
-        function clearAllData() {
-            if (!confirm('WARNING: This will permanently delete all saved books and bibliography data! Are you sure?')) return;
-            books = [];
-            usedReferences = [];
-            localStorage.removeItem('islamic_citation_books_v5');
-            localStorage.removeItem('islamic_citation_refs_v5');
-            renderBookSelect();
-            renderDatabaseTable();
-            renderBibliography();
-            showToast('All database data deleted');
-        }
-
-        function exportData() {
-            if (books.length === 0) {
-                showToast('No data to export', 'error');
-                return;
+            if (duplicates.length === 0) {
+                return showToast('Cloud Library is completely clean!', 'info');
             }
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(books));
-            const downloadAnchorNode = document.createElement('a');
-            downloadAnchorNode.setAttribute("href", dataStr);
-            downloadAnchorNode.setAttribute("download", "islamic_citation_database_backup.json");
-            document.body.appendChild(downloadAnchorNode);
-            downloadAnchorNode.click();
-            downloadAnchorNode.remove();
+
+            document.getElementById('cloud-syncing').classList.remove('hidden');
+            
+            // Batched delete to prevent freezing
+            let batch = writeBatch(db);
+            let opCount = 0;
+            let count = 0;
+
+            for (let dup of duplicates) {
+                const bookRef = doc(db, 'artifacts', appId, 'public', 'data', 'books', dup.id);
+                batch.delete(bookRef);
+                opCount++;
+                count++;
+
+                if (opCount >= 450) {
+                    await batch.commit();
+                    batch = writeBatch(db);
+                    opCount = 0;
+                }
+            }
+            if (opCount > 0) await batch.commit();
+
+            document.getElementById('cloud-syncing').classList.add('hidden');
+            showToast(`Scrubbed ${count} duplicates seamlessly from Cloud.`);
         }
+        
+        async function clearAllData() { 
+            const ans = await showDialog({ title: 'Factory Reset Cloud DB', message: 'Type DELETE to permanently erase the entire cloud database for ALL users worldwide:', type: 'prompt' });
+            if(ans === 'DELETE') { 
+                if(!firebaseUser) return showToast('Not connected to Cloud', 'error');
+                
+                document.getElementById('cloud-syncing').classList.remove('hidden');
+                
+                // Fast batched deletion
+                let batch = writeBatch(db);
+                let opCount = 0;
+
+                for (let b of books) {
+                    const bookRef = doc(db, 'artifacts', appId, 'public', 'data', 'books', b.id);
+                    batch.delete(bookRef);
+                    opCount++;
+                    if(opCount >= 450) { await batch.commit(); batch = writeBatch(db); opCount = 0; }
+                }
+                for (let s of allAppSessions) {
+                    const sRef = doc(db, 'artifacts', appId, 'public', 'data', 'app_sessions', s.id);
+                    batch.delete(sRef);
+                    opCount++;
+                    if(opCount >= 450) { await batch.commit(); batch = writeBatch(db); opCount = 0; }
+                }
+                for (let u of allAppUsers) {
+                    const uRef = doc(db, 'artifacts', appId, 'public', 'data', 'app_users', u.cell);
+                    batch.delete(uRef);
+                    opCount++;
+                    if(opCount >= 450) { await batch.commit(); batch = writeBatch(db); opCount = 0; }
+                }
+                
+                if(opCount > 0) await batch.commit();
+                
+                document.getElementById('cloud-syncing').classList.add('hidden');
+                showToast('Cloud Database Wiped Clean', 'success'); 
+            } else {
+                showToast('Reset Cancelled safely', 'info');
+            }
+        }
+
+        function renderDatabaseTable() {
+            const tbody = document.getElementById('db-table-body');
+            const theadRow = document.getElementById('db-table-header-row');
+            const searchInput = document.getElementById('search-db');
+            const searchTerm = searchInput ? searchInput.value.toLowerCase() : '';
+            
+            if(isAdminLoggedIn && theadRow.cells.length === 4) {
+                const th = document.createElement('th');
+                th.className = "p-3 text-center font-bold text-yellow-400 bg-gray-900 border-l border-gray-700";
+                th.innerHTML = "<i class='fa-solid fa-screwdriver-wrench mr-1'></i> Admin Actions";
+                theadRow.appendChild(th);
+            } else if (!isAdminLoggedIn && theadRow.cells.length === 5) {
+                theadRow.removeChild(theadRow.lastElementChild);
+            }
+
+            tbody.innerHTML = '';
+            const filteredBooks = books.filter(b => 
+                (b.title && b.title.toLowerCase().includes(searchTerm)) || 
+                (b.authorName && b.authorName.toLowerCase().includes(searchTerm)) ||
+                (b.publisher && b.publisher.toLowerCase().includes(searchTerm))
+            );
+            filteredBooks.sort((a, b) => a.title.localeCompare(b.title));
+            
+            filteredBooks.forEach(book => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-blue-50/50 border-b border-gray-200 transition-colors";
+                
+                let html = `
+                    <td class="p-4 font-bold text-primary font-arabic text-right rtl-input" dir="rtl">${book.title || '-'}</td>
+                    <td class="p-4 text-sm text-gray-700 font-arabic text-right rtl-input font-bold" dir="rtl">${book.authorName || '-'}</td>
+                    <td class="p-4 text-sm text-gray-600 font-arabic text-right rtl-input" dir="rtl">${book.publisher || '-'}</td>
+                    <td class="p-4 text-center text-xs text-gray-600 font-arabic font-bold bg-gray-50 border-l border-gray-200" dir="rtl">${[book.edition, book.pubYear].filter(Boolean).join(' - ') || '-'}</td>
+                `;
+                
+                if (isAdminLoggedIn) {
+                    html += `
+                    <td class="p-4 text-center border-l border-gray-200 bg-gray-50/50">
+                        <button onclick="window.openBookModal('${book.id}')" class="text-blue-500 hover:text-blue-700 bg-white border border-blue-200 p-2 rounded mr-2 shadow-sm transition-transform hover:scale-110" title="Edit Book"><i class="fa-solid fa-pen"></i></button>
+                        <button onclick="window.deleteBook('${book.id}')" class="text-red-500 hover:text-red-700 bg-white border border-red-200 p-2 rounded shadow-sm transition-transform hover:scale-110" title="Delete Book"><i class="fa-solid fa-trash"></i></button>
+                    </td>`;
+                }
+                
+                tr.innerHTML = html;
+                tbody.appendChild(tr);
+            });
+            
+            if (filteredBooks.length === 0) {
+                const cols = isAdminLoggedIn ? 5 : 4;
+                tbody.innerHTML = `<tr><td colspan="${cols}" class="p-8 text-center text-gray-400 font-bold"><i class="fa-solid fa-cloud text-3xl mb-3 block text-gray-300"></i> No books found in the Cloud Library.</td></tr>`;
+            }
+        }
+
+        // ==========================================
+        // EXPORT TO WINDOW FOR HTML INLINE BINDINGS
+        // ==========================================
+        window.switchTab = switchTab;
+        window.startCitationMode = startCitationMode;
+        window.openSettings = openSettings;
+        window.closeAuthModal = closeAuthModal;
+        window.checkAdminPassword = checkAdminPassword;
+        window.logoutAdmin = logoutAdmin;
+        window.addAdmin = addAdmin;
+        window.adminDeleteSession = adminDeleteSession;
+        window.updateFormatSettings = updateFormatSettings;
+        window.toggleFormatActive = toggleFormatActive;
+        window.moveFormat = moveFormat;
+        window.generateCitation = generateCitation;
+        window.copyCitation = copyCitation;
+        window.clearCitationFields = clearCitationFields;
+        window.createNewSession = createNewSession;
+        window.renameSession = renameSession;
+        window.changeSession = changeSession;
+        window.clearBibliography = clearBibliography;
+        window.copyBibliography = copyBibliography;
+        window.downloadWordDoc = downloadWordDoc;
+        window.moveBibItem = moveBibItem;
+        window.removeBibItem = removeBibItem;
+        window.sortBibliography = sortBibliography;
+        window.renderDatabaseTable = renderDatabaseTable;
+        window.openBookModal = openBookModal;
+        window.closeBookModal = closeBookModal;
+        window.saveBook = saveBook;
+        window.deleteBook = deleteBook;
+        window.importCSV = importCSV;
+        window.exportCSV = exportCSV;
+        window.removeExactDuplicates = removeExactDuplicates;
+        window.clearAllData = clearAllData;
+        window.closeRegModal = closeRegModal;
+        window.registerUser = registerUser;
+        window.logoutRegularUser = logoutRegularUser;
 
     </script>
 </body>
 </html>
+
+
