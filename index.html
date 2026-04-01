@@ -147,7 +147,7 @@
     </header>
 
     <!-- Main Content -->
-    <main class="flex-grow container mx-auto px-4 py-8 relative">
+    <main class="flex-grow container mx-auto px-4 py-3 relative">
 
         <!-- ==================== TAB 0: HOME / DASHBOARD ==================== -->
         <div id="view-home" class="block">
@@ -204,21 +204,21 @@
 
         <!-- ==================== TAB 1: CITATION BUILDER ==================== -->
         <div id="view-citation" class="hidden">
-            <div id="citation-mode-banner" class="mb-6 rounded-lg p-3 text-sm font-semibold flex items-center justify-center gap-2 shadow-sm"></div>
+            <div id="citation-mode-banner" class="mb-2 rounded-lg p-2 text-sm font-semibold flex items-center justify-center gap-2 shadow-sm"></div>
 
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
                 <!-- Form Area -->
-                <div class="lg:col-span-1 bg-white p-6 rounded-lg shadow border border-gray-200">
-                    <h2 class="text-lg font-bold mb-4 text-primary border-b pb-2">Current Fatwa Details</h2>
-                    
-                    <div class="mb-5">
-                        <label class="block text-sm font-semibold text-gray-700 mb-1">Select Book</label>
+                <div class="lg:col-span-1 bg-white p-4 rounded-lg shadow border border-gray-200">
+                    <h2 class="text-lg font-bold mb-2 text-primary border-b pb-1">Current Fatwa Details</h2>
+
+                    <div class="mb-2">
+                        <label class="block text-xs font-semibold text-gray-700 mb-0.5">Select Book</label>
                         <div class="relative">
                             <div class="flex items-center border border-gray-300 rounded-lg bg-gray-50 focus-within:ring-2 focus-within:ring-primary focus-within:border-primary shadow-sm">
                                 <i class="fa-solid fa-magnifying-glass text-gray-400 pl-3 pr-1 text-sm"></i>
                                 <input type="text" id="book-search-input"
                                     placeholder="Search by title or author..."
-                                    class="flex-grow p-2.5 bg-transparent focus:outline-none text-gray-800 text-sm"
+                                    class="flex-grow p-1.5 bg-transparent focus:outline-none text-gray-800 text-sm"
                                     autocomplete="off"
                                     oninput="window.filterBookDropdown()"
                                     onfocus="window.showBookDropdown()">
@@ -264,40 +264,40 @@
                         </div>
                     </div>
 
-                    <div class="space-y-4">
+                    <div class="space-y-2">
                         <div>
-                            <label class="block text-sm font-semibold text-gray-700 mb-1">Kitab (كتاب)</label>
-                            <input type="text" id="dyn-kitab" class="w-full border border-gray-300 rounded p-2 rtl-input focus:ring-2 focus:ring-primary shadow-sm">
+                            <label class="block text-xs font-semibold text-gray-700 mb-0.5">Kitab (كتاب)</label>
+                            <input type="text" id="dyn-kitab" class="w-full border border-gray-300 rounded p-1.5 rtl-input focus:ring-2 focus:ring-primary shadow-sm text-sm">
                         </div>
                         <div>
-                            <label class="block text-sm font-semibold text-gray-700 mb-1">Bab / Fasl (باب / فصل)</label>
-                            <input type="text" id="dyn-bab" class="w-full border border-gray-300 rounded p-2 rtl-input focus:ring-2 focus:ring-primary shadow-sm">
+                            <label class="block text-xs font-semibold text-gray-700 mb-0.5">Bab / Fasl (باب / فصل)</label>
+                            <input type="text" id="dyn-bab" class="w-full border border-gray-300 rounded p-1.5 rtl-input focus:ring-2 focus:ring-primary shadow-sm text-sm">
                         </div>
                         <div>
-                            <label class="block text-sm font-semibold text-gray-700 mb-1">Tahta Qawlihi / Ayah (تحت قوله)</label>
-                            <input type="text" id="dyn-tahta" class="w-full border border-gray-300 rounded p-2 rtl-input focus:ring-2 focus:ring-primary shadow-sm">
+                            <label class="block text-xs font-semibold text-gray-700 mb-0.5">Tahta Qawlihi / Ayah (تحت قوله)</label>
+                            <input type="text" id="dyn-tahta" class="w-full border border-gray-300 rounded p-1.5 rtl-input focus:ring-2 focus:ring-primary shadow-sm text-sm">
                         </div>
-                        <div class="grid grid-cols-2 gap-4">
+                        <div class="grid grid-cols-2 gap-2">
                             <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-1">Volume (الجزء)</label>
-                                <input type="text" id="dyn-vol" class="w-full border border-gray-300 rounded p-2 rtl-input text-center focus:ring-2 focus:ring-primary shadow-sm">
+                                <label class="block text-xs font-semibold text-gray-700 mb-0.5">Volume (الجزء)</label>
+                                <input type="text" id="dyn-vol" class="w-full border border-gray-300 rounded p-1.5 rtl-input text-center focus:ring-2 focus:ring-primary shadow-sm text-sm">
                             </div>
                             <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-1">Page (الصفحة)</label>
-                                <input type="text" id="dyn-page" class="w-full border border-gray-300 rounded p-2 rtl-input text-center focus:ring-2 focus:ring-primary shadow-sm">
+                                <label class="block text-xs font-semibold text-gray-700 mb-0.5">Page (الصفحة)</label>
+                                <input type="text" id="dyn-page" class="w-full border border-gray-300 rounded p-1.5 rtl-input text-center focus:ring-2 focus:ring-primary shadow-sm text-sm">
                             </div>
                         </div>
                         <div>
-                            <label class="block text-sm font-semibold text-gray-700 mb-1">Hadith/Mas'alah No. (رقم)</label>
-                            <input type="text" id="dyn-hadith" class="w-full border border-gray-300 rounded p-2 rtl-input text-center focus:ring-2 focus:ring-primary shadow-sm">
+                            <label class="block text-xs font-semibold text-gray-700 mb-0.5">Hadith/Mas'alah No. (رقم)</label>
+                            <input type="text" id="dyn-hadith" class="w-full border border-gray-300 rounded p-1.5 rtl-input text-center focus:ring-2 focus:ring-primary shadow-sm text-sm">
                         </div>
                     </div>
 
-                    <div class="mt-6 flex gap-2">
-                        <button onclick="window.generateCitation()" class="flex-grow bg-gold hover:bg-yellow-600 text-white font-bold py-3 px-4 rounded transition shadow text-base">
+                    <div class="mt-3 flex gap-2">
+                        <button onclick="window.generateCitation()" class="flex-grow bg-gold hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded transition shadow text-sm">
                             <i class="fa-solid fa-wand-magic-sparkles mr-2"></i> Generate
                         </button>
-                        <button onclick="window.clearCitationFields()" class="bg-gray-200 hover:bg-gray-300 text-gray-700 py-3 px-4 rounded transition shadow" title="Clear input fields">
+                        <button onclick="window.clearCitationFields()" class="bg-gray-200 hover:bg-gray-300 text-gray-700 py-2 px-4 rounded transition shadow" title="Clear input fields">
                             <i class="fa-solid fa-eraser"></i>
                         </button>
                     </div>
@@ -305,17 +305,17 @@
 
                 <!-- Output Display -->
                 <div class="lg:col-span-2">
-                    <div class="bg-white p-6 rounded-lg shadow border border-gray-200 h-full flex flex-col">
-                        <div class="flex justify-between items-center mb-4 border-b pb-2">
+                    <div class="bg-white p-4 rounded-lg shadow border border-gray-200 h-full flex flex-col">
+                        <div class="flex justify-between items-center mb-2 border-b pb-1">
                             <h2 class="text-lg font-bold text-primary">Citation Output</h2>
                             <button onclick="window.copyCitation('both')" class="bg-primary hover:bg-green-800 text-white px-3 py-1.5 rounded text-sm transition shadow font-medium">
                                 <i class="fa-regular fa-copy mr-1"></i> Copy Full Citation
                             </button>
                         </div>
                         
-                        <div id="citation-container" class="flex-grow flex flex-col gap-4 hidden">
+                        <div id="citation-container" class="flex-grow flex flex-col gap-3 hidden">
                             <!-- Urdu Intro -->
-                            <div class="bg-parchment p-5 rounded border border-gray-300 shadow-sm relative group transition-all hover:border-gold">
+                            <div class="bg-parchment p-3 rounded border border-gray-300 shadow-sm relative group transition-all hover:border-gold">
                                 <div class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                     <button onclick="window.copyCitation('intro')" class="text-gray-600 hover:text-primary bg-white px-2 py-1 rounded shadow text-xs font-medium border"><i class="fa-regular fa-copy mr-1"></i> Copy Intro</button>
                                 </div>
@@ -324,7 +324,7 @@
                             </div>
 
                             <!-- Arabic Ref -->
-                            <div class="bg-white p-5 rounded border border-gold-light shadow-sm relative group transition-all hover:border-gold">
+                            <div class="bg-white p-3 rounded border border-gold-light shadow-sm relative group transition-all hover:border-gold">
                                 <div class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                     <button onclick="window.copyCitation('arabic')" class="text-gray-600 hover:text-primary bg-white px-2 py-1 rounded shadow text-xs font-medium border"><i class="fa-regular fa-copy mr-1"></i> Copy Reference</button>
                                 </div>
@@ -332,7 +332,7 @@
                                 <div id="out-arabic" class="text-2xl font-arabic font-bold text-primary leading-loose" dir="rtl"></div>
                             </div>
                         </div>
-                        <div id="citation-placeholder" class="flex-grow flex items-center justify-center text-gray-400 text-sm bg-gray-50 rounded border border-dashed border-gray-300 min-h-[250px]">
+                        <div id="citation-placeholder" class="flex-grow flex items-center justify-center text-gray-400 text-sm bg-gray-50 rounded border border-dashed border-gray-300 min-h-[180px]">
                             <div class="text-center">
                                 <i class="fa-solid fa-quote-left text-3xl mb-3 text-gray-300"></i>
                                 <p>Generated citation will appear here...</p>
