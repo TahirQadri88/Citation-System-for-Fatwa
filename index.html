@@ -906,6 +906,14 @@
         function toUrduName(name) {
             if (!name) return '';
 
+            // Phrase-level substitutions applied before word-by-word processing
+            const phraseMap = [
+                [/\u0648\u062C\u0645\u0627\u0639\u0629 \u0645\u0646 \u0639\u0644\u0645\u0627\u0621 \u0627\u0644\u0647\u0646\u062F/g, '\u0627\u0648\u0631 \u0639\u0644\u0645\u0627\u0621 \u06C1\u0646\u062F \u06A9\u06CC \u0627\u06CC\u06A9 \u062C\u0645\u0627\u0639\u062A'],  // وجماعة من علماء الهند → اور علماء ہند کی ایک جماعت
+                [/\u0648\u0622\u062E\u0631\u0648\u0646/g, '\u0627\u0648\u0631 \u062F\u06CC\u06AF\u0631'],  // وآخرون → اور دیگر
+                [/\u0648\u063A\u064A\u0631\u0647/g, '\u0648\u063A\u06CC\u0631\u06C1'],  // وغيره → وغیرہ
+            ];
+            phraseMap.forEach(([ar, ur]) => { name = name.replace(ar, ur); });
+
             // Normalise all alef-with-hamza variants to plain alef so matching is reliable
             function normaliseAlef(s) {
                 return s.replace(/[\u0623\u0625\u0622\u0671\u0672\u0673\u0675]/g, '\u0627');
@@ -916,7 +924,8 @@
                 return w
                     .replace(/\u0643/g, '\u06A9')          // ك Arabic kaf → ک Urdu keheh
                     .replace(/[\u064A\u0649]/g, '\u06CC')  // ي ya + ى alef maqsura → ی Urdu ya
-                    .replace(/[\u0647\u0629]$/, '\u06C1'); // ه ha / ة ta-marbuta at word end → ہ
+                    .replace(/\u0629$/, '\u06C1')          // ة ta-marbuta at word end → ہ
+                    .replace(/\u0647/g, '\u06C1');         // ه ha (all positions) → ہ
             }
 
             const words = name.split(/\s+/);
