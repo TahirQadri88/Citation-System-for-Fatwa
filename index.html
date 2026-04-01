@@ -800,14 +800,14 @@
         let formatSettings = {
             urdu: { deathYear: true, rahmatullah: false },
             arabic: [
-                { id: 'title', label: 'Book Title (اسم الكتاب)', active: true },
-                { id: 'kitab', label: 'Kitab / Bab / Tahta (كتاب/باب)', active: true },
-                { id: 'volpage', label: 'Volume & Page (الجزء/الصفحة)', active: true },
-                { id: 'hadith', label: 'Hadith No (رقم الحديث)', active: true },
-                { id: 'publisher', label: 'Publisher (المطبعة)', active: true },
-                { id: 'place', label: 'Place (مكان الطبع)', active: true },
-                { id: 'edition', label: 'Edition (الطبعة)', active: true },
-                { id: 'pubyear', label: 'Pub Year (سنة الطبع)', active: true }
+                { id: 'title',     label: 'Book Title (اسم الكتاب)',          active: true },
+                { id: 'kitab',     label: 'Kitab / Bab / Tahta (كتاب/باب)',   active: true },
+                { id: 'hadith',    label: 'Hadith / Mas\'alah No (رقم)',       active: true },
+                { id: 'volpage',   label: 'Volume & Page (الجزء/الصفحة)',      active: true },
+                { id: 'publisher', label: 'Publisher (المطبعة)',               active: true },
+                { id: 'place',     label: 'Place (مكان الطبع)',                active: true },
+                { id: 'edition',   label: 'Edition (الطبعة)',                  active: true },
+                { id: 'pubyear',   label: 'Pub Year (سنة الطبع)',              active: true }
             ]
         };
 
@@ -818,12 +818,13 @@
             const storedAdmins = localStorage.getItem('islamic_citation_admins_v9');
             if(storedAdmins) admins = JSON.parse(storedAdmins) || [{ username: 'Tahir', pwd: '7869' }];
 
-            const storedFmt = localStorage.getItem('islamic_citation_format_v9');
+            // v10: reset format order so رقم now appears before جلد/صفحه by default
+            const storedFmt = localStorage.getItem('islamic_citation_format_v10');
             if(storedFmt) formatSettings = JSON.parse(storedFmt);
-            
+
             document.getElementById('fmt-deathyear').checked = formatSettings.urdu.deathYear;
             document.getElementById('fmt-rahmatullah').checked = formatSettings.urdu.rahmatullah;
-            
+
             renderStyleList();
             updateUserUI();
         } catch(e) {}
@@ -831,7 +832,7 @@
         function saveLocalData() {
             localStorage.setItem('islamic_citation_current_user_v9', JSON.stringify(currentUser));
             localStorage.setItem('islamic_citation_admins_v9', JSON.stringify(admins));
-            localStorage.setItem('islamic_citation_format_v9', JSON.stringify(formatSettings));
+            localStorage.setItem('islamic_citation_format_v10', JSON.stringify(formatSettings));
         }
 
         // ==========================================
@@ -841,6 +842,14 @@
         // Generates a unique ID for new books and sessions
         function generateId() {
             return 'book_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        }
+
+        // Converts an Arabic-script name to Urdu writing convention:
+        // removes the Arabic definite article ال which is not used in Urdu
+        // e.g. "الإمام مالك" → "إمام مالك", "المصمودي" → "مصمودي"
+        function toUrduName(name) {
+            if (!name) return '';
+            return name.replace(/ال(\S)/g, '$1').replace(/\s+/g, ' ').trim();
         }
 
         // Converts Western/English digits (1,2,3) to Arabic-Indic numerals (١,٢,٣)
@@ -1185,32 +1194,33 @@
                 return;
             }
             
-            let listHTML = '<div class="space-y-4 font-arabic text-xl">';
+            let listHTML = '<div class="space-y-3 font-arabic text-xl">';
             session.refs.forEach((book, index) => {
                 const elements = [];
                 formatSettings.arabic.forEach(fmt => {
                     if(!fmt.active) return;
                     switch(fmt.id) {
-                        case 'title': if(book.title) elements.push(`<strong class="text-primary">${book.title}</strong>`); break;
+                        case 'title':     if(book.title)     elements.push(`<strong class="text-primary">${book.title}</strong>`); break;
                         case 'publisher': if(book.publisher) elements.push(`مطبوعة ${book.publisher}`); break;
-                        case 'place': if(book.place) elements.push(book.place); break;
-                        case 'edition': if(book.edition) elements.push(book.edition); break;
-                        case 'pubyear': if(book.pubYear) elements.push(toArabicDigits(book.pubYear)); break;
+                        case 'place':     if(book.place)     elements.push(book.place); break;
+                        case 'edition':   if(book.edition)   elements.push(book.edition); break;
+                        case 'pubyear':   if(book.pubYear)   elements.push(toArabicDigits(book.pubYear)); break;
                     }
                 });
                 let authorStr = book.authorName || '';
                 if (book.deathYear) authorStr += ` (متوفى ${toArabicDigits(book.deathYear)})`;
                 if(authorStr) elements.splice(1, 0, authorStr);
-                
-                let htmlStr = `<div class="flex items-start gap-4 p-3 bg-white rounded-lg border border-gray-200 shadow-sm relative group transition-all">
-                    <div class="flex flex-col items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity absolute left-2 top-2 bg-gray-50 p-1.5 rounded-lg border border-gray-200 shadow-sm z-10">
-                        <button onclick="window.moveBibItem(${index}, -1)" class="text-gray-400 hover:text-primary p-1 rounded hover:bg-white" title="Move Up"><i class="fa-solid fa-arrow-up"></i></button>
-                        <button onclick="window.moveBibItem(${index}, 1)" class="text-gray-400 hover:text-primary p-1 rounded hover:bg-white" title="Move Down"><i class="fa-solid fa-arrow-down"></i></button>
-                        <div class="border-t border-gray-300 w-full my-0.5"></div>
-                        <button onclick="window.removeBibItem(${index})" class="text-red-400 hover:text-red-600 p-1 rounded hover:bg-white" title="Remove"><i class="fa-solid fa-trash"></i></button>
+
+                let htmlStr = `<div class="bg-white rounded-lg border border-gray-200 shadow-sm transition-all hover:border-gold-light">
+                    <div class="flex items-center justify-between gap-2 px-3 py-2 border-b border-gray-100 bg-gray-50 rounded-t-lg">
+                        <span class="text-xs font-bold text-gray-400 select-none">${index + 1}</span>
+                        <div class="flex items-center gap-1">
+                            <button onclick="window.moveBibItem(${index}, -1)" class="text-gray-400 hover:text-primary hover:bg-white px-2.5 py-1.5 rounded border border-transparent hover:border-gray-200 transition text-xs font-bold" title="Move Up">&#8593; Up</button>
+                            <button onclick="window.moveBibItem(${index}, 1)"  class="text-gray-400 hover:text-primary hover:bg-white px-2.5 py-1.5 rounded border border-transparent hover:border-gray-200 transition text-xs font-bold" title="Move Down">&#8595; Down</button>
+                            <button onclick="window.removeBibItem(${index})"   class="text-red-400 hover:text-red-600 hover:bg-red-50 px-2.5 py-1.5 rounded border border-transparent hover:border-red-200 transition text-xs font-bold ml-1" title="Remove"><i class="fa-solid fa-trash mr-1"></i>Remove</button>
+                        </div>
                     </div>
-                    <div class="font-bold text-gray-400 select-none">${index + 1}.</div>
-                    <div class="flex-grow leading-loose pl-12 text-gray-800">
+                    <div class="px-4 py-3 leading-loose text-gray-800 text-right" dir="rtl">
                         ${elements.join('، ')}
                     </div>
                 </div>`;
@@ -1366,9 +1376,10 @@
             };
 
             let introText = "";
-            if (book.authorName) introText += book.authorName + " ";
-            if (formatSettings.urdu.rahmatullah && book.authorName) introText += "(رحمہ اللہ) ";
+            const urduAuthor = toUrduName(book.authorName);
+            if (urduAuthor) introText += urduAuthor + " ";
             if (formatSettings.urdu.deathYear && book.deathYear) introText += `متوفی ${toArabicDigits(book.deathYear)} `;
+            if (formatSettings.urdu.rahmatullah && urduAuthor) introText += "(رحمہ اللہ) ";
             if(introText.trim()) introText = introText.trim() + " لکھتے ہیں:";
             else introText = "صاحبِ کتاب لکھتے ہیں:"; 
 
