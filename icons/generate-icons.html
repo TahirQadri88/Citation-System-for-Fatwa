@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Masaadir Icon Generator</title>
+  <style>
+    body { font-family: Georgia, serif; background: #0f2d0f; color: #dfb95c; display: flex; flex-direction: column; align-items: center; gap: 24px; padding: 40px; min-height: 100vh; }
+    h1 { font-size: 28px; margin: 0; letter-spacing: 3px; }
+    p { color: #aaa; font-style: italic; margin: 0; }
+    canvas { border-radius: 24px; box-shadow: 0 8px 40px rgba(0,0,0,0.7); }
+    .buttons { display: flex; gap: 16px; flex-wrap: wrap; justify-content: center; }
+    button { padding: 14px 32px; background: #b8860b; color: white; border: none; border-radius: 10px; cursor: pointer; font-size: 15px; font-weight: bold; font-family: Georgia, serif; letter-spacing: 1px; transition: background 0.2s; }
+    button:hover { background: #dfb95c; color: #1a4a1a; }
+    .note { font-size: 13px; color: #888; max-width: 500px; text-align: center; line-height: 1.8; }
+  </style>
+</head>
+<body>
+  <h1>MASAADIR Icon Generator</h1>
+  <p>by Abul Laith</p>
+  <canvas id="preview" width="512" height="512"></canvas>
+  <div class="buttons">
+    <button onclick="downloadPNG(512)">⬇ Download 512 × 512 PNG</button>
+    <button onclick="downloadPNG(192)">⬇ Download 192 × 192 PNG</button>
+  </div>
+  <p class="note">
+    After downloading: place both files inside the <strong>icons/</strong> folder of your project,
+    then commit and push. The manifest is already configured to use them.
+  </p>
+
+  <script>
+    function drawIcon(size) {
+      const canvas = document.createElement('canvas');
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext('2d');
+      const s = size / 512; // scale factor
+
+      // ── BACKGROUND ──────────────────────────────────────────────────
+      ctx.save();
+      const r = 80 * s;
+      ctx.beginPath();
+      ctx.moveTo(r, 0); ctx.lineTo(size - r, 0);
+      ctx.arcTo(size, 0, size, r, r);
+      ctx.lineTo(size, size - r);
+      ctx.arcTo(size, size, size - r, size, r);
+      ctx.lineTo(r, size);
+      ctx.arcTo(0, size, 0, size - r, r);
+      ctx.lineTo(0, r);
+      ctx.arcTo(0, 0, r, 0, r);
+      ctx.closePath();
+      ctx.fillStyle = '#1a4a1a';
+      ctx.fill();
+      ctx.clip();
+
+      // Background radial glow
+      const bgGlow = ctx.createRadialGradient(size/2, size*0.38, 0, size/2, size/2, size*0.72);
+      bgGlow.addColorStop(0, 'rgba(45,100,45,0.55)');
+      bgGlow.addColorStop(1, 'rgba(0,0,0,0.35)');
+      ctx.fillStyle = bgGlow;
+      ctx.fillRect(0, 0, size, size);
+
+      // ── GOLD BORDER ─────────────────────────────────────────────────
+      const bi = 14 * s; // border inset
+      const br = 68 * s;
+      ctx.globalAlpha = 0.55;
+      ctx.strokeStyle = '#b8860b';
+      ctx.lineWidth = 5 * s;
+      ctx.beginPath();
+      ctx.moveTo(bi + br, bi); ctx.lineTo(size - bi - br, bi);
+      ctx.arcTo(size - bi, bi, size - bi, bi + br, br);
+      ctx.lineTo(size - bi, size - bi - br);
+      ctx.arcTo(size - bi, size - bi, size - bi - br, size - bi, br);
+      ctx.lineTo(bi + br, size - bi);
+      ctx.arcTo(bi, size - bi, bi, size - bi - br, br);
+      ctx.lineTo(bi, bi + br);
+      ctx.arcTo(bi, bi, bi + br, bi, br);
+      ctx.closePath();
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+
+      // ── OPEN BOOK ───────────────────────────────────────────────────
+      const mid   = size / 2;
+      const bTop  = 136 * s;
+      const bBot  = 346 * s;
+      const bLeft = 60 * s;
+      const bRight= 452 * s;
+      const spine = 11 * s;
+
+      ctx.shadowColor   = 'rgba(0,0,0,0.55)';
+      ctx.shadowBlur    = 18 * s;
+      ctx.shadowOffsetX = 0;
+      ctx.shadowOffsetY = 10 * s;
+
+      // Left page
+      ctx.beginPath();
+      ctx.moveTo(bLeft + 18*s, bTop);
+      ctx.lineTo(mid - spine, bTop + 12*s);
+      ctx.lineTo(mid - spine, bBot - 12*s);
+      ctx.lineTo(bLeft + 18*s, bBot);
+      ctx.arcTo(bLeft, bBot, bLeft, bBot - 18*s, 18*s);
+      ctx.lineTo(bLeft, bTop + 18*s);
+      ctx.arcTo(bLeft, bTop, bLeft + 18*s, bTop, 18*s);
+      ctx.closePath();
+      const lpGrad = ctx.createLinearGradient(bLeft, 0, mid, 0);
+      lpGrad.addColorStop(0, '#f5e49a');
+      lpGrad.addColorStop(0.7, '#e8cc6a');
+      lpGrad.addColorStop(1, '#d4a830');
+      ctx.fillStyle = lpGrad;
+      ctx.fill();
+
+      // Right page
+      ctx.beginPath();
+      ctx.moveTo(mid + spine, bTop + 12*s);
+      ctx.lineTo(bRight - 18*s, bTop);
+      ctx.arcTo(bRight, bTop, bRight, bTop + 18*s, 18*s);
+      ctx.lineTo(bRight, bBot - 18*s);
+      ctx.arcTo(bRight, bBot, bRight - 18*s, bBot, 18*s);
+      ctx.lineTo(mid + spine, bBot - 12*s);
+      ctx.closePath();
+      const rpGrad = ctx.createLinearGradient(mid, 0, bRight, 0);
+      rpGrad.addColorStop(0, '#d4a830');
+      rpGrad.addColorStop(0.3, '#c89c28');
+      rpGrad.addColorStop(1, '#b88820');
+      ctx.fillStyle = rpGrad;
+      ctx.fill();
+
+      ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
+
+      // Spine
+      const spGrad = ctx.createLinearGradient(mid - spine, 0, mid + spine, 0);
+      spGrad.addColorStop(0, '#3a2000');
+      spGrad.addColorStop(0.4, '#7a5010');
+      spGrad.addColorStop(0.6, '#9a6818');
+      spGrad.addColorStop(1, '#3a2000');
+      ctx.fillStyle = spGrad;
+      ctx.fillRect(mid - spine, bTop, spine * 2, bBot - bTop);
+
+      // Spine gold lines
+      ctx.globalAlpha = 0.5;
+      ctx.strokeStyle = '#dfb95c';
+      ctx.lineWidth = 1.5 * s;
+      [mid - spine*0.3, mid + spine*0.3].forEach(lx => {
+        ctx.beginPath(); ctx.moveTo(lx, bTop + 14*s); ctx.lineTo(lx, bBot - 14*s); ctx.stroke();
+      });
+      ctx.globalAlpha = 1;
+
+      // Page inner edge shadows
+      ctx.globalAlpha = 0.18;
+      ctx.fillStyle = '#3a2000';
+      ctx.fillRect(bLeft + 18*s, bTop, 22*s, bBot - bTop);
+      ctx.fillRect(bRight - 40*s, bTop, 22*s, bBot - bTop);
+      ctx.globalAlpha = 1;
+
+      // ── TEXT LINES ON PAGES ─────────────────────────────────────────
+      ctx.lineCap = 'round';
+      ctx.globalAlpha = 0.2;
+      ctx.strokeStyle = '#1a2a1a';
+      ctx.lineWidth = 10 * s;
+
+      const lineYs = [bTop + 44*s, bTop + 72*s, bTop + 100*s, bTop + 128*s, bTop + 156*s, bTop + 184*s];
+      lineYs.forEach((ly, i) => {
+        const xShortL = i === lineYs.length - 1 ? 0.55 : 1;
+        const xShortR = i === lineYs.length - 1 ? 0.55 : 1;
+        ctx.beginPath();
+        ctx.moveTo(bLeft + 34*s, ly);
+        ctx.lineTo((mid - spine - 20*s - bLeft - 34*s) * xShortL + bLeft + 34*s, ly);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(mid + spine + 20*s, ly);
+        ctx.lineTo(mid + spine + 20*s + (bRight - mid - spine - 40*s) * xShortR, ly);
+        ctx.stroke();
+      });
+      ctx.globalAlpha = 1;
+
+      // ── DECORATIVE 8-POINT STARS ────────────────────────────────────
+      star(ctx, 96*s, 100*s, 18*s, 0.45);
+      star(ctx, 416*s, 100*s, 18*s, 0.45);
+
+      // ── HORIZONTAL DIVIDER LINE ─────────────────────────────────────
+      ctx.globalAlpha = 0.4;
+      ctx.strokeStyle = '#b8860b';
+      ctx.lineWidth = 1.5 * s;
+      ctx.beginPath();
+      ctx.moveTo(60*s, 376*s); ctx.lineTo(452*s, 376*s);
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+
+      // ── MASAADIR TEXT ────────────────────────────────────────────────
+      ctx.shadowColor = 'rgba(0,0,0,0.6)';
+      ctx.shadowBlur  = 10 * s;
+      ctx.shadowOffsetY = 3 * s;
+
+      ctx.textAlign    = 'center';
+      ctx.textBaseline = 'middle';
+
+      const mainSize = Math.round(62 * s);
+      ctx.font      = `bold ${mainSize}px Georgia, 'Times New Roman', serif`;
+      ctx.fillStyle = '#dfb95c';
+      ctx.fillText('MASAADIR', size / 2, 418 * s);
+
+      ctx.shadowBlur = 5 * s;
+      const subSize = Math.round(22 * s);
+      ctx.font      = `italic ${subSize}px Georgia, 'Times New Roman', serif`;
+      ctx.fillStyle = '#c9a84c';
+      ctx.globalAlpha = 0.92;
+      ctx.fillText('by Abul Laith', size / 2, 462 * s);
+      ctx.globalAlpha = 1;
+
+      ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
+      ctx.restore();
+
+      return canvas;
+    }
+
+    function star(ctx, cx, cy, r, alpha) {
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = '#dfb95c';
+      ctx.beginPath();
+      for (let i = 0; i < 16; i++) {
+        const angle = (i * Math.PI) / 8 - Math.PI / 2;
+        const radius = i % 2 === 0 ? r : r * 0.42;
+        const x = cx + radius * Math.cos(angle);
+        const y = cy + radius * Math.sin(angle);
+        i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+      }
+      ctx.closePath();
+      ctx.fill();
+      ctx.globalAlpha = 1;
+    }
+
+    // Draw preview
+    const preview512 = drawIcon(512);
+    document.getElementById('preview').getContext('2d')
+      .drawImage(preview512, 0, 0);
+
+    function downloadPNG(size) {
+      const canvas = drawIcon(size);
+      const link   = document.createElement('a');
+      link.download = `icon-${size}.png`;
+      link.href     = canvas.toDataURL('image/png');
+      link.click();
+    }
+  </script>
+</body>
+</html>
