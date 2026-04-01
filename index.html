@@ -535,6 +535,35 @@
                     </div>
 
                 </div>
+
+                <!-- ── Registered Users Management (full-width, below grid) ── -->
+                <div class="mt-6 bg-gray-50 p-5 rounded-xl border border-gray-200 shadow-inner">
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 border-b pb-3 gap-3">
+                        <h3 class="text-lg font-bold text-primary"><i class="fa-solid fa-users mr-2 text-green-600"></i> Registered Users <span class="font-urdu font-normal text-base text-gray-400">رجسٹرڈ صارفین</span></h3>
+                        <div class="flex gap-2 flex-wrap items-center">
+                            <input type="text" id="admin-new-user-name" placeholder="Full Name" class="border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-primary outline-none shadow-sm w-36">
+                            <input type="tel" id="admin-new-user-cell" placeholder="03XXXXXXXXX" class="border border-gray-300 rounded-lg p-2 text-sm font-mono tracking-wider focus:ring-2 focus:ring-primary outline-none shadow-sm w-40">
+                            <button onclick="window.adminAddUser()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-bold transition shadow-sm whitespace-nowrap">
+                                <i class="fa-solid fa-user-plus mr-1"></i> Add User
+                            </button>
+                        </div>
+                    </div>
+                    <div class="max-h-72 overflow-y-auto border border-gray-300 rounded-lg bg-white shadow-sm">
+                        <table class="w-full text-left text-sm">
+                            <thead class="bg-gray-100 text-gray-700 sticky top-0 border-b border-gray-300">
+                                <tr>
+                                    <th class="p-3 font-bold">Full Name</th>
+                                    <th class="p-3 font-bold">Cell Number</th>
+                                    <th class="p-3 font-bold">Sessions</th>
+                                    <th class="p-3 text-center font-bold">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="admin-users-table" class="divide-y divide-gray-100">
+                                <!-- Populated via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -547,10 +576,11 @@
                 <i class="fa-solid fa-user-lock"></i>
             </div>
             <h3 class="text-2xl font-bold text-gray-800 mb-2">Secure Login</h3>
-            <p class="text-sm text-gray-500 mb-6 font-medium">Enter your Name and Cell number. If registered, you will be logged back in.</p>
-            
+            <p class="text-sm text-gray-500 mb-4 font-medium">Enter your Name and Cell number. If registered, you will be logged back in.</p>
+
             <input type="text" id="reg-name" placeholder="Full Name" class="w-full border-2 border-gray-200 rounded-xl p-3.5 focus:border-green-500 outline-none mb-3 font-semibold text-gray-800">
-            <input type="tel" id="reg-cell" placeholder="Cell Number (e.g. 03001234567)" class="w-full border-2 border-gray-200 rounded-xl p-3.5 focus:border-green-500 outline-none mb-8 font-bold text-gray-800 text-center tracking-wider">
+            <input type="tel" id="reg-cell" placeholder="03XXXXXXXXX or +923XXXXXXXXX" class="w-full border-2 border-gray-200 rounded-xl p-3.5 focus:border-green-500 outline-none mb-1 font-bold text-gray-800 text-center tracking-wider">
+            <p class="text-xs text-gray-400 mb-6">Format: 03132736963 or +923132736963</p>
             
             <div class="flex gap-3">
                 <button onclick="window.closeRegModal()" class="flex-1 px-4 py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 font-bold transition">Cancel</button>
@@ -784,7 +814,7 @@
             onSnapshot(usersRef, (snapshot) => {
                 allAppUsers = [];
                 snapshot.forEach(docSnap => allAppUsers.push(docSnap.data()));
-                if(isAdminLoggedIn) renderAdminSessions();
+                if(isAdminLoggedIn) { renderAdminSessions(); renderAdminUsers(); }
             }, (error) => console.error("Users listener error:", error));
 
             const sessionsRef = collection(db, 'artifacts', appId, 'public', 'data', 'app_sessions');
@@ -1120,13 +1150,27 @@
         // ==========================================
         // USER AUTH & REGISTRATION LOGIC
         // ==========================================
+
+        // Validate Pakistani cell number: 03XXXXXXXXX (11 digits) or +923XXXXXXXXX (13 chars)
+        function validateCell(cell) {
+            return /^(03\d{9}|\+923\d{9})$/.test(cell);
+        }
+
+        // Normalise +923XXXXXXXXX → 03XXXXXXXXX for consistent Firestore doc key
+        function normaliseCell(cell) {
+            if (cell.startsWith('+92')) return '0' + cell.slice(3);
+            return cell;
+        }
+
         async function registerUser() {
             if(!firebaseUser) return showToast('Cloud Connection Required', 'error');
 
             const name = document.getElementById('reg-name').value.trim();
-            const cell = document.getElementById('reg-cell').value.trim();
-            if (!name || !cell) return showToast('Name and Cell Number are required', 'error'); 
-            
+            const rawCell = document.getElementById('reg-cell').value.trim();
+            if (!name || !rawCell) return showToast('Name and Cell Number are required', 'error');
+            if (!validateCell(rawCell)) return showToast('Cell must be 03XXXXXXXXX or +923XXXXXXXXX (Pakistani format)', 'error');
+
+            const cell = normaliseCell(rawCell);
             const existingUser = allAppUsers.find(u => u.cell === cell);
             if (existingUser) {
                 showToast(`Cell recognized. Welcome back, ${existingUser.name}!`);
@@ -1141,7 +1185,6 @@
                     return showToast('Failed to register on Cloud', 'error');
                 }
             }
-            
             saveLocalData();
             closeRegModal();
             updateUserUI();
@@ -1583,7 +1626,7 @@
             const p = document.getElementById('auth-pwd').value;
             const valid = admins.find(a => a.username.toLowerCase() === u.toLowerCase() && a.pwd === p);
             if (valid) {
-                isAdminLoggedIn = true; closeAuthModal(); switchTab('settings'); renderAdminSessions();
+                isAdminLoggedIn = true; closeAuthModal(); switchTab('settings'); renderAdminSessions(); renderAdminUsers();
                 renderDatabaseTable(); 
                 showToast(`Access Granted. Welcome ${valid.username}.`);
             } else { showToast('Access Denied', 'error'); }
@@ -1611,21 +1654,114 @@
             const tbody = document.getElementById('admin-session-table');
             if(!tbody) return;
             tbody.innerHTML = '';
-            
             if(allAppSessions.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="3" class="p-6 text-center text-gray-500 font-bold"><i class="fa-solid fa-folder-open text-2xl block mb-2"></i> No active sessions found in Cloud.</td></tr>`;
                 return;
             }
-
             allAppSessions.forEach(s => {
+                const owner = allAppUsers.find(u => u.cell === s.userCell);
+                const displayName = owner ? `<span class="font-bold text-gray-800">${owner.name}</span><br><span class="text-xs text-gray-500 font-mono">${s.userCell}</span>` : `<span class="font-mono text-gray-600">${s.userCell}</span>`;
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td class="p-4 border-t font-bold text-gray-800">${s.userCell}</td>
-                    <td class="p-4 border-t text-primary font-bold">${s.name} <span class="text-xs text-gray-600 bg-gray-200 px-2 py-1 rounded-full ml-2 shadow-sm">${s.refs.length} refs</span></td>
-                    <td class="p-4 border-t text-center"><button onclick="window.adminDeleteSession('${s.id}')" class="text-white hover:bg-red-700 bg-red-600 px-3 py-1.5 rounded shadow"><i class="fa-solid fa-trash-can"></i> Delete</button></td>
+                    <td class="p-3 border-t">${displayName}</td>
+                    <td class="p-3 border-t text-primary font-bold">${s.name} <span class="text-xs text-gray-600 bg-gray-200 px-2 py-1 rounded-full ml-2">${s.refs.length} refs</span></td>
+                    <td class="p-3 border-t text-center"><button onclick="window.adminDeleteSession('${s.id}')" class="text-white hover:bg-red-700 bg-red-600 px-3 py-1.5 rounded shadow text-xs"><i class="fa-solid fa-trash-can"></i> Delete</button></td>
                 `;
                 tbody.appendChild(tr);
             });
+        }
+
+        // ── Admin: Render all registered users ──
+        function renderAdminUsers() {
+            const tbody = document.getElementById('admin-users-table');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+            if (allAppUsers.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" class="p-6 text-center text-gray-500"><i class="fa-solid fa-users-slash text-2xl block mb-2"></i> No registered users.</td></tr>`;
+                return;
+            }
+            allAppUsers.slice().sort((a,b) => (a.name||'').localeCompare(b.name||'')).forEach(u => {
+                const sessionCount = allAppSessions.filter(s => s.userCell === u.cell).length;
+                const safeId = u.cell.replace(/\+/g, 'p');
+                const tr = document.createElement('tr');
+                tr.id = `user-row-${safeId}`;
+                tr.innerHTML = `
+                    <td class="p-3 font-semibold text-gray-800">${u.name}</td>
+                    <td class="p-3 font-mono font-bold text-primary">${u.cell}</td>
+                    <td class="p-3 text-gray-500 text-xs">${sessionCount} session${sessionCount !== 1 ? 's' : ''}</td>
+                    <td class="p-3 text-center">
+                        <div class="flex gap-1 justify-center">
+                            <button onclick="window.adminEditUserRow('${u.cell}', '${u.name.replace(/'/g, '&#39;')}')"
+                                    class="bg-blue-100 hover:bg-blue-200 text-blue-700 px-2.5 py-1 rounded text-xs font-bold transition">
+                                <i class="fa-solid fa-pen"></i> Edit
+                            </button>
+                            <button onclick="window.adminDeleteUser('${u.cell}')"
+                                    class="bg-red-100 hover:bg-red-200 text-red-700 px-2.5 py-1 rounded text-xs font-bold transition">
+                                <i class="fa-solid fa-trash-can"></i> Remove
+                            </button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function adminEditUserRow(cell, name) {
+            const safeId = cell.replace(/\+/g, 'p');
+            const tr = document.getElementById(`user-row-${safeId}`);
+            if (!tr) return;
+            tr.innerHTML = `
+                <td class="p-2"><input type="text" value="${name}" id="edit-uname-${safeId}" class="w-full border border-gray-300 rounded p-1.5 text-sm focus:ring-2 focus:ring-primary"></td>
+                <td class="p-2"><input type="tel" value="${cell}" id="edit-ucell-${safeId}" class="w-full border border-gray-300 rounded p-1.5 text-sm font-mono tracking-wider focus:ring-2 focus:ring-primary"></td>
+                <td class="p-2 text-gray-400 text-xs italic">editing…</td>
+                <td class="p-2 text-center">
+                    <div class="flex gap-1 justify-center">
+                        <button onclick="window.adminSaveUser('${cell}')" class="bg-green-600 hover:bg-green-700 text-white px-2.5 py-1 rounded text-xs font-bold transition"><i class="fa-solid fa-check"></i> Save</button>
+                        <button onclick="window.renderAdminUsers()" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-2.5 py-1 rounded text-xs font-bold transition"><i class="fa-solid fa-xmark"></i></button>
+                    </div>
+                </td>
+            `;
+        }
+
+        async function adminSaveUser(oldCell) {
+            const safeId = oldCell.replace(/\+/g, 'p');
+            const newName = document.getElementById(`edit-uname-${safeId}`)?.value.trim();
+            const rawNewCell = document.getElementById(`edit-ucell-${safeId}`)?.value.trim();
+            if (!newName || !rawNewCell) return showToast('Name and Cell are required', 'error');
+            if (!validateCell(rawNewCell)) return showToast('Cell must be 03XXXXXXXXX or +923XXXXXXXXX', 'error');
+            const newCell = normaliseCell(rawNewCell);
+            if (newCell !== oldCell && allAppUsers.find(u => u.cell === newCell)) return showToast('Cell number already in use by another user', 'error');
+            try {
+                if (newCell !== oldCell) {
+                    await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'app_users', oldCell));
+                }
+                await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'app_users', newCell), { name: newName, cell: newCell, registeredAt: Date.now() });
+                showToast('User updated');
+            } catch(e) { showToast('Failed to update user', 'error'); }
+        }
+
+        async function adminDeleteUser(cell) {
+            const confirmed = await showDialog({ title: 'Remove User?', message: `Remove ${cell}? Their sessions remain but they won't be able to log in.`, type: 'confirm' });
+            if (!confirmed) return;
+            try {
+                await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'app_users', cell));
+                showToast('User removed');
+            } catch(e) { showToast('Failed to remove user', 'error'); }
+        }
+
+        async function adminAddUser() {
+            const name = document.getElementById('admin-new-user-name').value.trim();
+            const rawCell = document.getElementById('admin-new-user-cell').value.trim();
+            if (!name || !rawCell) return showToast('Name and Cell Number are required', 'error');
+            if (!validateCell(rawCell)) return showToast('Cell must be 03XXXXXXXXX or +923XXXXXXXXX', 'error');
+            const cell = normaliseCell(rawCell);
+            if (allAppUsers.find(u => u.cell === cell)) return showToast('Cell number already registered', 'error');
+            try {
+                await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'app_users', cell), { name, cell, registeredAt: Date.now() });
+                document.getElementById('admin-new-user-name').value = '';
+                document.getElementById('admin-new-user-cell').value = '';
+                showToast(`User ${name} added`);
+            } catch(e) { showToast('Failed to add user', 'error'); }
         }
         
         async function adminDeleteSession(id) {
@@ -2025,6 +2161,11 @@
         window.closeRegModal = closeRegModal;
         window.registerUser = registerUser;
         window.logoutRegularUser = logoutRegularUser;
+        window.renderAdminUsers = renderAdminUsers;
+        window.adminEditUserRow = adminEditUserRow;
+        window.adminSaveUser = adminSaveUser;
+        window.adminDeleteUser = adminDeleteUser;
+        window.adminAddUser = adminAddUser;
 
     </script>
 
