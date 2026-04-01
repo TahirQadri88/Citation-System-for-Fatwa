@@ -128,20 +128,25 @@
         
         <!-- Navigation Tabs -->
         <div id="nav-tabs" class="hidden container mx-auto px-4 flex gap-2 md:gap-6 text-sm md:text-base bg-primary text-white border-t border-green-800 overflow-x-auto whitespace-nowrap pt-2">
-            <button onclick="window.switchTab('citation')" id="tab-citation" class="py-3 px-4 tab-inactive hover:text-gold transition-colors">
-                <i class="fa-solid fa-feather-pointed mr-1"></i> Citation Builder
+            <button onclick="window.switchTab('citation')" id="tab-citation" class="py-2 px-4 tab-inactive hover:text-gold transition-colors flex flex-col items-center leading-tight">
+                <span><i class="fa-solid fa-feather-pointed mr-1"></i> Citation Builder</span>
+                <span class="font-urdu text-xs opacity-70">حوالہ ساز</span>
             </button>
-            <button onclick="window.switchTab('database')" id="tab-database" class="py-3 px-4 tab-inactive hover:text-gold transition-colors">
-                <i class="fa-solid fa-database mr-1"></i> Library
+            <button onclick="window.switchTab('database')" id="tab-database" class="py-2 px-4 tab-inactive hover:text-gold transition-colors flex flex-col items-center leading-tight">
+                <span><i class="fa-solid fa-database mr-1"></i> Library</span>
+                <span class="font-urdu text-xs opacity-70">کتب خانہ</span>
             </button>
-            <button onclick="window.switchTab('bibliography')" id="tab-bibliography" class="py-3 px-4 tab-inactive hover:text-gold transition-colors">
-                <i class="fa-solid fa-list-ol mr-1"></i> Bibliography Sessions
+            <button onclick="window.switchTab('bibliography')" id="tab-bibliography" class="py-2 px-4 tab-inactive hover:text-gold transition-colors flex flex-col items-center leading-tight">
+                <span><i class="fa-solid fa-list-ol mr-1"></i> Bibliography Sessions</span>
+                <span class="font-urdu text-xs opacity-70">مصادر و مراجع</span>
             </button>
-            <button onclick="window.switchTab('style')" id="tab-style" class="py-3 px-4 tab-inactive hover:text-gold transition-colors">
-                <i class="fa-solid fa-pen-ruler mr-1"></i> Formatting
+            <button onclick="window.switchTab('style')" id="tab-style" class="py-2 px-4 tab-inactive hover:text-gold transition-colors flex flex-col items-center leading-tight">
+                <span><i class="fa-solid fa-pen-ruler mr-1"></i> Formatting</span>
+                <span class="font-urdu text-xs opacity-70">ترتیب</span>
             </button>
-            <button onclick="window.openSettings()" id="tab-settings" class="py-3 px-4 tab-inactive hover:text-gold transition-colors ml-auto">
-                <i class="fa-solid fa-gear mr-1"></i> Admin Panel
+            <button onclick="window.openSettings()" id="tab-settings" class="py-2 px-4 tab-inactive hover:text-gold transition-colors ml-auto flex flex-col items-center leading-tight">
+                <span><i class="fa-solid fa-gear mr-1"></i> Admin Panel</span>
+                <span class="font-urdu text-xs opacity-70">انتظامیہ</span>
             </button>
         </div>
     </header>
@@ -209,10 +214,10 @@
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
                 <!-- Form Area -->
                 <div class="lg:col-span-1 bg-white p-4 rounded-lg shadow border border-gray-200">
-                    <h2 class="text-lg font-bold mb-2 text-primary border-b pb-1">Current Fatwa Details</h2>
+                    <h2 class="text-lg font-bold mb-2 text-primary border-b pb-1">Current Fatwa Details <span class="font-urdu text-sm font-normal text-gray-400">موجودہ فتوی کی تفصیل</span></h2>
 
                     <div class="mb-2">
-                        <label class="block text-xs font-semibold text-gray-700 mb-0.5">Select Book</label>
+                        <label class="block text-xs font-semibold text-gray-700 mb-0.5">Select Book <span class="font-urdu font-normal text-gray-400">کتاب منتخب کریں</span></label>
                         <div class="relative">
                             <div class="flex items-center border border-gray-300 rounded-lg bg-gray-50 focus-within:ring-2 focus-within:ring-primary focus-within:border-primary shadow-sm">
                                 <i class="fa-solid fa-magnifying-glass text-gray-400 pl-3 pr-1 text-sm"></i>
@@ -266,36 +271,36 @@
 
                     <div class="space-y-2">
                         <div>
-                            <label class="block text-xs font-semibold text-gray-700 mb-0.5">Kitab (كتاب)</label>
+                            <label class="block text-xs font-semibold text-gray-700 mb-0.5">Kitab <span class="font-urdu font-normal text-gray-400">کتاب</span></label>
                             <input type="text" id="dyn-kitab" class="w-full border border-gray-300 rounded p-1.5 rtl-input focus:ring-2 focus:ring-primary shadow-sm text-sm">
                         </div>
                         <div>
-                            <label class="block text-xs font-semibold text-gray-700 mb-0.5">Bab / Fasl (باب / فصل)</label>
+                            <label class="block text-xs font-semibold text-gray-700 mb-0.5">Bab / Fasl <span class="font-urdu font-normal text-gray-400">باب / فصل</span></label>
                             <input type="text" id="dyn-bab" class="w-full border border-gray-300 rounded p-1.5 rtl-input focus:ring-2 focus:ring-primary shadow-sm text-sm">
                         </div>
                         <div>
-                            <label class="block text-xs font-semibold text-gray-700 mb-0.5">Tahta Qawlihi / Ayah (تحت قوله)</label>
+                            <label class="block text-xs font-semibold text-gray-700 mb-0.5">Tahta Qawlihi <span class="font-urdu font-normal text-gray-400">تحت قولہ / آیت</span></label>
                             <input type="text" id="dyn-tahta" class="w-full border border-gray-300 rounded p-1.5 rtl-input focus:ring-2 focus:ring-primary shadow-sm text-sm">
                         </div>
                         <div class="grid grid-cols-2 gap-2">
                             <div>
-                                <label class="block text-xs font-semibold text-gray-700 mb-0.5">Volume (الجزء)</label>
+                                <label class="block text-xs font-semibold text-gray-700 mb-0.5">Volume <span class="font-urdu font-normal text-gray-400">جلد</span></label>
                                 <input type="text" id="dyn-vol" class="w-full border border-gray-300 rounded p-1.5 rtl-input text-center focus:ring-2 focus:ring-primary shadow-sm text-sm">
                             </div>
                             <div>
-                                <label class="block text-xs font-semibold text-gray-700 mb-0.5">Page (الصفحة)</label>
+                                <label class="block text-xs font-semibold text-gray-700 mb-0.5">Page <span class="font-urdu font-normal text-gray-400">صفحہ</span></label>
                                 <input type="text" id="dyn-page" class="w-full border border-gray-300 rounded p-1.5 rtl-input text-center focus:ring-2 focus:ring-primary shadow-sm text-sm">
                             </div>
                         </div>
                         <div>
-                            <label class="block text-xs font-semibold text-gray-700 mb-0.5">Hadith/Mas'alah No. (رقم)</label>
+                            <label class="block text-xs font-semibold text-gray-700 mb-0.5">Hadith / Mas'alah No. <span class="font-urdu font-normal text-gray-400">حدیث / مسئلہ نمبر</span></label>
                             <input type="text" id="dyn-hadith" class="w-full border border-gray-300 rounded p-1.5 rtl-input text-center focus:ring-2 focus:ring-primary shadow-sm text-sm">
                         </div>
                     </div>
 
                     <div class="mt-3 flex gap-2">
                         <button onclick="window.generateCitation()" class="flex-grow bg-gold hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded transition shadow text-sm">
-                            <i class="fa-solid fa-wand-magic-sparkles mr-2"></i> Generate
+                            <i class="fa-solid fa-wand-magic-sparkles mr-2"></i> Generate <span class="font-urdu font-normal text-sm opacity-80">حوالہ بنائیں</span>
                         </button>
                         <button onclick="window.clearCitationFields()" class="bg-gray-200 hover:bg-gray-300 text-gray-700 py-2 px-4 rounded transition shadow" title="Clear input fields">
                             <i class="fa-solid fa-eraser"></i>
@@ -307,9 +312,9 @@
                 <div class="lg:col-span-2">
                     <div class="bg-white p-4 rounded-lg shadow border border-gray-200 h-full flex flex-col">
                         <div class="flex justify-between items-center mb-2 border-b pb-1">
-                            <h2 class="text-lg font-bold text-primary">Citation Output</h2>
+                            <h2 class="text-lg font-bold text-primary">Citation Output <span class="font-urdu text-sm font-normal text-gray-400">حوالہ</span></h2>
                             <button onclick="window.copyCitation('both')" class="bg-primary hover:bg-green-800 text-white px-3 py-1.5 rounded text-sm transition shadow font-medium">
-                                <i class="fa-regular fa-copy mr-1"></i> Copy Full Citation
+                                <i class="fa-regular fa-copy mr-1"></i> Copy Full Citation <span class="font-urdu font-normal opacity-80">مکمل حوالہ</span>
                             </button>
                         </div>
                         
@@ -347,7 +352,7 @@
         <div id="view-database" class="hidden">
             <div class="bg-white p-6 rounded-lg shadow border border-gray-200">
                 <div class="flex justify-between items-center mb-6 border-b pb-4">
-                    <h2 class="text-xl font-bold text-primary">Library Database</h2>
+                    <h2 class="text-xl font-bold text-primary">Library Database <span class="font-urdu text-base font-normal text-gray-400">کتب خانہ</span></h2>
                     <span class="text-sm text-green-700 bg-green-50 border border-green-200 px-3 py-1.5 rounded-full font-medium shadow-sm"><i class="fa-solid fa-cloud-arrow-down mr-1"></i> Cloud Synced</span>
                 </div>
                 <div class="mb-4 relative">
