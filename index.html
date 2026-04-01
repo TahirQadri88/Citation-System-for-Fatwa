@@ -844,12 +844,41 @@
             return 'book_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
         }
 
-        // Converts an Arabic-script name to Urdu writing convention:
-        // removes the Arabic definite article ال which is not used in Urdu
-        // e.g. "الإمام مالك" → "إمام مالك", "المصمودي" → "مصمودي"
+        // Converts an Arabic-script author name to Urdu writing convention:
+        // - Removes ال definite article (except in kunya second word, e.g. ابو الحسن)
+        // - Maps Arabic-only characters to their Urdu equivalents (ك→ک, ي→ی, ه$→ہ, etc.)
+        // - Handles whole-word special cases: الله→اللہ, أبي→ابو
         function toUrduName(name) {
             if (!name) return '';
-            return name.replace(/ال(\S)/g, '$1').replace(/\s+/g, ' ').trim();
+
+            // Whole-word overrides (checked before ال removal)
+            const wordMap = {
+                'الله': 'اللہ',
+                'اللَّه': 'اللہ',
+                'أبي': 'ابو',
+                'ابي': 'ابو',
+                'أبو': 'ابو',
+            };
+
+            const words = name.split(/\s+/);
+            return words.map((word, i) => {
+                if (wordMap[word]) return wordMap[word];
+
+                // After ابو (kunya) the second word keeps its ال — it is part of the name
+                const prevIsAbu = i > 0 && (wordMap[words[i - 1]] === 'ابو' || words[i - 1] === 'أبو' || words[i - 1] === 'ابو');
+
+                let w = prevIsAbu ? word : word.replace(/^ال/, '');
+
+                w = w
+                    .replace(/أ/g, 'ا')
+                    .replace(/إ/g, 'ا')
+                    .replace(/ك/g, 'ک')
+                    .replace(/ي/g, 'ی')
+                    .replace(/ى/g, 'ی')
+                    .replace(/ه$/, 'ہ');
+
+                return w;
+            }).join(' ').replace(/\s+/g, ' ').trim();
         }
 
         // Converts Western/English digits (1,2,3) to Arabic-Indic numerals (١,٢,٣)
