@@ -881,11 +881,19 @@
             }).join(' ').replace(/\s+/g, ' ').trim();
         }
 
-        // Converts Western/English digits (1,2,3) to Arabic-Indic numerals (١,٢,٣)
+        // Converts Western/English digits (1,2,3) to Arabic-Indic numerals (١,٢,٣) — used in Arabic bibliography
         function toArabicDigits(str) {
             if (!str) return str;
             const map = { '0':'٠','1':'١','2':'٢','3':'٣','4':'٤','5':'٥','6':'٦','7':'٧','8':'٨','9':'٩' };
             return String(str).replace(/[0-9]/g, d => map[d]);
+        }
+
+        // Converts Western digits AND Arabic-Indic digits to Extended Arabic-Indic (Urdu) numerals (۰,۱,۲,...) — used in Urdu intro/citation
+        function toUrduDigits(str) {
+            if (!str) return str;
+            const map = { '0':'۰','1':'۱','2':'۲','3':'۳','4':'۴','5':'۵','6':'۶','7':'۷','8':'۸','9':'۹',
+                          '٠':'۰','١':'۱','٢':'۲','٣':'۳','٤':'۴','٥':'۵','٦':'۶','٧':'۷','٨':'۸','٩':'۹' };
+            return String(str).replace(/[0-9٠-٩]/g, d => map[d] ?? d);
         }
 
         // Displays a brief notification message at the bottom of the screen
@@ -1438,8 +1446,8 @@
             });
 
             const citationString = "(" + citationElements.join('، ') + ")";
-            textIntroRaw = introText;
-            textArabicRaw = citationString;
+            textIntroRaw = toUrduDigits(introText);
+            textArabicRaw = toUrduDigits(citationString);
 
             document.getElementById('citation-placeholder').classList.add('hidden');
             document.getElementById('citation-container').classList.remove('hidden');
