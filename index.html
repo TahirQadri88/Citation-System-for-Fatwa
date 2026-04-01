@@ -160,50 +160,56 @@
         <div id="view-home" class="block">
             <div class="text-center mb-6">
                 <h2 class="text-2xl font-bold text-primary mb-1">Welcome to the Citation Engine</h2>
-                <p class="text-gray-600 text-sm">Select an option below to begin managing your library and fatwa citations.</p>
+                <p class="font-urdu text-gold text-lg mb-1">فتاویٰ حوالہ نظام میں خوش آمدید</p>
+                <p class="text-gray-500 text-sm">Select an option below to begin managing your library and fatwa citations.</p>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 max-w-7xl mx-auto">
-                
+
                 <!-- Tile 1: General Citation -->
                 <div onclick="window.startCitationMode('general')" class="tile-hover cursor-pointer bg-white rounded-2xl p-6 border-2 border-gray-100 flex flex-col items-center text-center shadow-sm">
                     <div class="w-14 h-14 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center text-xl mb-4"><i class="fa-solid fa-feather"></i></div>
-                    <h3 class="text-base font-bold text-gray-800 mb-2">Citation Only</h3>
+                    <h3 class="text-base font-bold text-gray-800 mb-0.5">Citation Only</h3>
+                    <p class="font-urdu text-xs text-gold mb-2">صرف حوالہ</p>
                     <p class="text-xs text-gray-500">Generate a quick citation without saving it to any session.</p>
-                    <div class="mt-auto pt-4 text-blue-600 font-semibold text-xs uppercase tracking-wider">General Option <i class="fa-solid fa-arrow-right ml-1"></i></div>
+                    <div class="mt-auto pt-3 text-blue-600 font-semibold text-xs uppercase tracking-wider">General Option <i class="fa-solid fa-arrow-right ml-1"></i></div>
                 </div>
 
                 <!-- Tile 2: Session Citation -->
                 <div onclick="window.startCitationMode('session')" class="tile-hover cursor-pointer bg-white rounded-2xl p-6 border-2 border-green-100 flex flex-col items-center text-center shadow-sm relative overflow-hidden">
                     <div class="absolute top-0 right-0 bg-green-500 text-white text-[9px] font-bold px-2 py-1 rounded-bl-lg uppercase tracking-wider shadow">Secured</div>
                     <div class="w-14 h-14 rounded-full bg-green-50 text-green-600 flex items-center justify-center text-xl mb-4"><i class="fa-solid fa-layer-group"></i></div>
-                    <h3 class="text-base font-bold text-gray-800 mb-2">Bibliography</h3>
+                    <h3 class="text-base font-bold text-gray-800 mb-0.5">Bibliography</h3>
+                    <p class="font-urdu text-xs text-gold mb-2">مصادر و مراجع</p>
                     <p class="text-xs text-gray-500">Log in securely to save and structure citations into active sessions.</p>
-                    <div class="mt-auto pt-4 text-green-600 font-semibold text-xs uppercase tracking-wider">Session Mode <i class="fa-solid fa-arrow-right ml-1"></i></div>
+                    <div class="mt-auto pt-3 text-green-600 font-semibold text-xs uppercase tracking-wider">Session Mode <i class="fa-solid fa-arrow-right ml-1"></i></div>
                 </div>
 
                 <!-- Tile 3: Database -->
                 <div onclick="window.switchTab('database')" class="tile-hover cursor-pointer bg-white rounded-2xl p-6 border-2 border-purple-100 flex flex-col items-center text-center shadow-sm">
                     <div class="w-14 h-14 rounded-full bg-purple-50 text-purple-600 flex items-center justify-center text-xl mb-4"><i class="fa-solid fa-book-quran"></i></div>
-                    <h3 class="text-base font-bold text-gray-800 mb-2">Database</h3>
+                    <h3 class="text-base font-bold text-gray-800 mb-0.5">Database</h3>
+                    <p class="font-urdu text-xs text-gold mb-2">کتب خانہ</p>
                     <p class="text-xs text-gray-500">View and search your complete cloud-synced library of books.</p>
-                    <div class="mt-auto pt-4 text-purple-600 font-semibold text-xs uppercase tracking-wider">View Library <i class="fa-solid fa-arrow-right ml-1"></i></div>
+                    <div class="mt-auto pt-3 text-purple-600 font-semibold text-xs uppercase tracking-wider">View Library <i class="fa-solid fa-arrow-right ml-1"></i></div>
                 </div>
 
                 <!-- Tile 4: Citation Style -->
                 <div onclick="window.switchTab('style')" class="tile-hover cursor-pointer bg-white rounded-2xl p-6 border-2 border-orange-100 flex flex-col items-center text-center shadow-sm">
                     <div class="w-14 h-14 rounded-full bg-orange-50 text-orange-600 flex items-center justify-center text-xl mb-4"><i class="fa-solid fa-pen-ruler"></i></div>
-                    <h3 class="text-base font-bold text-gray-800 mb-2">Style Settings</h3>
+                    <h3 class="text-base font-bold text-gray-800 mb-0.5">Style Settings</h3>
+                    <p class="font-urdu text-xs text-gold mb-2">ترتیبِ حوالہ</p>
                     <p class="text-xs text-gray-500">Rearrange columns, include/exclude details like Edition or Pub Year.</p>
-                    <div class="mt-auto pt-4 text-orange-600 font-semibold text-xs uppercase tracking-wider">Format Options <i class="fa-solid fa-arrow-right ml-1"></i></div>
+                    <div class="mt-auto pt-3 text-orange-600 font-semibold text-xs uppercase tracking-wider">Format Options <i class="fa-solid fa-arrow-right ml-1"></i></div>
                 </div>
 
                 <!-- Tile 5: Settings (Admin) -->
                 <div onclick="window.openSettings()" class="tile-hover cursor-pointer bg-gradient-to-b from-gray-800 to-gray-900 rounded-2xl p-6 flex flex-col items-center text-center shadow-md border-2 border-gray-900">
                     <div class="w-14 h-14 rounded-full bg-gray-700 text-gold-light flex items-center justify-center text-xl mb-4 shadow-inner"><i class="fa-solid fa-shield-halved"></i></div>
-                    <h3 class="text-base font-bold text-white mb-2">Admin Panel</h3>
+                    <h3 class="text-base font-bold text-white mb-0.5">Admin Panel</h3>
+                    <p class="font-urdu text-xs text-gold-light mb-2">انتظامیہ</p>
                     <p class="text-xs text-gray-400">Manage Cloud DB, User Sessions, and CSV Operations.</p>
-                    <div class="mt-auto pt-4 text-gold-light font-semibold text-xs uppercase tracking-wider">Super User <i class="fa-solid fa-arrow-right ml-1"></i></div>
+                    <div class="mt-auto pt-3 text-gold-light font-semibold text-xs uppercase tracking-wider">Super User <i class="fa-solid fa-arrow-right ml-1"></i></div>
                 </div>
 
             </div>
