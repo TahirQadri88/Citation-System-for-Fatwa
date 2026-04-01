@@ -67,6 +67,18 @@
         
         .rtl-input { direction: rtl; text-align: right; font-family: 'Amiri', serif; font-size: 1.1rem; }
 
+        /* Force Urdu Nastaliq font on the citation intro output */
+        #out-intro {
+            font-family: 'Noto Nastaliq Urdu', serif !important;
+            font-size: 1.25rem !important;
+            line-height: 2.6 !important;
+        }
+
+        /* Book search dropdown */
+        #book-dropdown { border-top: none; border-radius: 0 0 8px 8px; }
+        #book-dropdown .book-option:hover { background-color: #f0fdf4; }
+        #book-dropdown .book-option { border-bottom: 1px solid #f3f4f6; cursor: pointer; transition: background 0.15s; }
+
         /* Tile Hover Effects */
         .tile-hover { transition: all 0.3s ease; }
         .tile-hover:hover { transform: translateY(-5px); box-shadow: 0 10px 25px -5px rgba(26, 74, 26, 0.3); }
@@ -201,7 +213,55 @@
                     
                     <div class="mb-5">
                         <label class="block text-sm font-semibold text-gray-700 mb-1">Select Book</label>
-                        <select id="book-select" class="w-full border border-gray-300 rounded p-2.5 rtl-input bg-gray-50 focus:ring-2 focus:ring-primary focus:outline-none shadow-sm text-gray-800"></select>
+                        <div class="relative">
+                            <div class="flex items-center border border-gray-300 rounded-lg bg-gray-50 focus-within:ring-2 focus-within:ring-primary focus-within:border-primary shadow-sm">
+                                <i class="fa-solid fa-magnifying-glass text-gray-400 pl-3 pr-1 text-sm"></i>
+                                <input type="text" id="book-search-input"
+                                    placeholder="Search by title or author..."
+                                    class="flex-grow p-2.5 bg-transparent focus:outline-none text-gray-800 text-sm"
+                                    autocomplete="off"
+                                    oninput="window.filterBookDropdown()"
+                                    onfocus="window.showBookDropdown()">
+                                <button onclick="window.clearBookSelection()" class="px-3 text-gray-300 hover:text-gray-500 transition" title="Clear selection">
+                                    <i class="fa-solid fa-xmark"></i>
+                                </button>
+                            </div>
+                            <div id="book-dropdown" class="hidden absolute z-50 w-full bg-white border border-gray-300 shadow-xl max-h-64 overflow-y-auto" style="border-radius:0 0 8px 8px; border-top:none; margin-top:-1px;"></div>
+                        </div>
+                        <input type="hidden" id="book-select" value="">
+                    </div>
+
+                    <!-- Book Details Panel (shown after selection) -->
+                    <div id="book-details-panel" class="hidden mb-5 bg-green-50 border border-green-200 rounded-lg p-4">
+                        <p class="text-xs font-bold text-primary uppercase tracking-wider mb-3 pb-2 border-b border-green-200">
+                            <i class="fa-solid fa-circle-info mr-1 text-green-600"></i> Book Details from Library
+                        </p>
+                        <div class="space-y-2">
+                            <div class="flex justify-between items-start gap-3">
+                                <span class="text-gray-400 text-xs font-semibold whitespace-nowrap mt-1">Author</span>
+                                <span id="detail-author" class="font-arabic text-right text-gray-800 font-bold text-sm leading-relaxed" dir="rtl"></span>
+                            </div>
+                            <div class="flex justify-between items-start gap-3">
+                                <span class="text-gray-400 text-xs font-semibold whitespace-nowrap mt-1">Death Year</span>
+                                <span id="detail-deathyear" class="font-arabic text-right text-gray-700 text-sm" dir="rtl"></span>
+                            </div>
+                            <div class="flex justify-between items-start gap-3">
+                                <span class="text-gray-400 text-xs font-semibold whitespace-nowrap mt-1">Publisher</span>
+                                <span id="detail-publisher" class="font-arabic text-right text-gray-700 text-sm" dir="rtl"></span>
+                            </div>
+                            <div class="flex justify-between items-start gap-3">
+                                <span class="text-gray-400 text-xs font-semibold whitespace-nowrap mt-1">Place</span>
+                                <span id="detail-place" class="font-arabic text-right text-gray-700 text-sm" dir="rtl"></span>
+                            </div>
+                            <div class="flex justify-between items-start gap-3">
+                                <span class="text-gray-400 text-xs font-semibold whitespace-nowrap mt-1">Edition</span>
+                                <span id="detail-edition" class="font-arabic text-right text-gray-700 text-sm" dir="rtl"></span>
+                            </div>
+                            <div class="flex justify-between items-start gap-3">
+                                <span class="text-gray-400 text-xs font-semibold whitespace-nowrap mt-1">Pub. Year</span>
+                                <span id="detail-pubyear" class="font-arabic text-right text-gray-700 text-sm" dir="rtl"></span>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="space-y-4">
@@ -260,7 +320,7 @@
                                     <button onclick="window.copyCitation('intro')" class="text-gray-600 hover:text-primary bg-white px-2 py-1 rounded shadow text-xs font-medium border"><i class="fa-regular fa-copy mr-1"></i> Copy Intro</button>
                                 </div>
                                 <p class="text-xs text-gray-400 mb-2 uppercase font-semibold tracking-wider">Urdu Intro (مقدمة)</p>
-                                <div id="out-intro" class="text-xl font-urdu text-secondary leading-loose" dir="rtl"></div>
+                                <div id="out-intro" class="font-urdu text-secondary" dir="rtl" lang="ur"></div>
                             </div>
 
                             <!-- Arabic Ref -->
@@ -803,20 +863,82 @@
             setTimeout(() => { if (toast.parentNode) toast.remove(); }, 3200);
         }
 
-        // Populates the book dropdown in the Citation Builder with all books from the library
+        // Refreshes the searchable book dropdown (called whenever books load from cloud)
         function renderBookSelect() {
-            const select = document.getElementById('book-select');
-            if (!select) return;
-            const currentVal = select.value;
-            select.innerHTML = '<option value="">-- اختر الكتاب / Select a Book --</option>';
+            const currentId = document.getElementById('book-select').value;
+            // If a book is already selected, re-populate its details in case data changed
+            if (currentId) {
+                const book = books.find(b => b.id === currentId);
+                if (book) populateBookDetails(book);
+            }
+            // Re-filter to reflect any new books added
+            filterBookDropdown();
+        }
+
+        // Shows the dropdown list
+        function showBookDropdown() {
+            filterBookDropdown();
+            document.getElementById('book-dropdown').classList.remove('hidden');
+        }
+
+        // Filters dropdown based on search input
+        function filterBookDropdown() {
+            const query = document.getElementById('book-search-input').value.toLowerCase().trim();
+            const dropdown = document.getElementById('book-dropdown');
             const sorted = [...books].sort((a, b) => (a.title || '').localeCompare(b.title || ''));
-            sorted.forEach(book => {
-                const opt = document.createElement('option');
-                opt.value = book.id;
-                opt.textContent = book.title || '(Untitled)';
-                if (book.id === currentVal) opt.selected = true;
-                select.appendChild(opt);
+            const filtered = query
+                ? sorted.filter(b =>
+                    (b.title || '').toLowerCase().includes(query) ||
+                    (b.authorName || '').toLowerCase().includes(query) ||
+                    (b.publisher || '').toLowerCase().includes(query))
+                : sorted;
+
+            dropdown.innerHTML = '';
+
+            if (filtered.length === 0) {
+                dropdown.innerHTML = `<div class="p-4 text-center text-gray-400 text-sm">
+                    <i class="fa-solid fa-book-open text-2xl mb-2 block text-gray-300"></i>No books found</div>`;
+                return;
+            }
+
+            filtered.forEach(book => {
+                const div = document.createElement('div');
+                div.className = 'book-option p-3';
+                div.innerHTML = `
+                    <div class="font-arabic font-bold text-primary text-base text-right leading-snug" dir="rtl">${book.title || '(Untitled)'}</div>
+                    <div class="font-arabic text-gray-500 text-xs text-right mt-0.5" dir="rtl">${[book.authorName, book.edition].filter(Boolean).join(' — ') || ''}</div>`;
+                div.onclick = () => selectBookFromDropdown(book.id);
+                dropdown.appendChild(div);
             });
+        }
+
+        // Called when user clicks a book in the dropdown
+        function selectBookFromDropdown(bookId) {
+            const book = books.find(b => b.id === bookId);
+            if (!book) return;
+            document.getElementById('book-select').value = bookId;
+            document.getElementById('book-search-input').value = book.title || '';
+            document.getElementById('book-dropdown').classList.add('hidden');
+            populateBookDetails(book);
+        }
+
+        // Fills the Book Details panel
+        function populateBookDetails(book) {
+            document.getElementById('detail-author').textContent    = book.authorName  || '—';
+            document.getElementById('detail-deathyear').textContent = book.deathYear   || '—';
+            document.getElementById('detail-publisher').textContent = book.publisher   || '—';
+            document.getElementById('detail-place').textContent     = book.place       || '—';
+            document.getElementById('detail-edition').textContent   = book.edition     || '—';
+            document.getElementById('detail-pubyear').textContent   = book.pubYear     || '—';
+            document.getElementById('book-details-panel').classList.remove('hidden');
+        }
+
+        // Clears book selection and hides details panel
+        function clearBookSelection() {
+            document.getElementById('book-select').value = '';
+            document.getElementById('book-search-input').value = '';
+            document.getElementById('book-details-panel').classList.add('hidden');
+            document.getElementById('book-dropdown').classList.add('hidden');
         }
 
         // ==========================================
@@ -1297,9 +1419,12 @@
             } catch(e) { showToast('Copy failed', 'error'); }
         }
 
-        function clearCitationFields() { 
-            ['dyn-kitab', 'dyn-bab', 'dyn-tahta', 'dyn-vol', 'dyn-page', 'dyn-hadith'].forEach(id => document.getElementById(id).value = ''); 
-            showToast('Input fields cleared', 'info'); 
+        function clearCitationFields() {
+            ['dyn-kitab', 'dyn-bab', 'dyn-tahta', 'dyn-vol', 'dyn-page', 'dyn-hadith'].forEach(id => document.getElementById(id).value = '');
+            clearBookSelection();
+            document.getElementById('citation-container').classList.add('hidden');
+            document.getElementById('citation-placeholder').classList.remove('hidden');
+            showToast('Fields cleared', 'info');
         }
 
         // ==========================================
@@ -1784,6 +1909,18 @@
         window.removeBibItem = removeBibItem;
         window.sortBibliography = sortBibliography;
         window.renderDatabaseTable = renderDatabaseTable;
+        window.showBookDropdown = showBookDropdown;
+        window.filterBookDropdown = filterBookDropdown;
+        window.clearBookSelection = clearBookSelection;
+
+        // Close book dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            const container = document.getElementById('book-search-input');
+            const dropdown  = document.getElementById('book-dropdown');
+            if (container && dropdown && !container.contains(e.target) && !dropdown.contains(e.target)) {
+                dropdown.classList.add('hidden');
+            }
+        });
         window.openBookModal = openBookModal;
         window.closeBookModal = closeBookModal;
         window.saveBook = saveBook;
