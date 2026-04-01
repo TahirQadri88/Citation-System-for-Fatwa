@@ -844,40 +844,44 @@
             return 'book_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
         }
 
-        // Converts an Arabic-script author name to Urdu writing convention:
-        // - Removes ال definite article (except in kunya second word, e.g. ابو الحسن)
-        // - Maps Arabic-only characters to their Urdu equivalents (ك→ک, ي→ی, ه$→ہ, etc.)
-        // - Handles whole-word special cases: الله→اللہ, أبي→ابو
+        // Converts an Arabic-script author name to Urdu writing convention.
+        // Normalises alef variants, removes ال (with exceptions), maps Arabic chars to Urdu.
         function toUrduName(name) {
             if (!name) return '';
 
-            // Whole-word overrides (checked before ال removal)
-            const wordMap = {
-                'الله': 'اللہ',
-                'اللَّه': 'اللہ',
-                'أبي': 'ابو',
-                'ابي': 'ابو',
-                'أبو': 'ابو',
-            };
+            // Normalise all alef-with-hamza variants to plain alef so matching is reliable
+            function normaliseAlef(s) {
+                return s.replace(/[\u0623\u0625\u0622\u0671\u0672\u0673\u0675]/g, '\u0627');
+            }
+
+            // Apply full character-level Arabic → Urdu conversion to a word
+            function charConvert(w) {
+                return w
+                    .replace(/\u0643/g, '\u06A9')          // ك Arabic kaf → ک Urdu keheh
+                    .replace(/[\u064A\u0649]/g, '\u06CC')  // ي ya + ى alef maqsura → ی Urdu ya
+                    .replace(/[\u0647\u0629]$/, '\u06C1'); // ه ha / ة ta-marbuta at word end → ہ
+            }
 
             const words = name.split(/\s+/);
             return words.map((word, i) => {
-                if (wordMap[word]) return wordMap[word];
+                const norm = normaliseAlef(word);
 
-                // After ابو (kunya) the second word keeps its ال — it is part of the name
-                const prevIsAbu = i > 0 && (wordMap[words[i - 1]] === 'ابو' || words[i - 1] === 'أبو' || words[i - 1] === 'ابو');
+                // الله and variants → اللہ (regex-based, handles diacritics/encoding variants)
+                if (/^\u0627\u0644{1,2}[\u0647\u0629\u06C1]$/.test(norm)) return '\u0627\u0644\u0644\u06C1';
 
-                let w = prevIsAbu ? word : word.replace(/^ال/, '');
+                // أبي / أبو (kunya) → ابو  (match after alef normalisation)
+                if (/^\u0627\u0628[\u0648\u064A]$/.test(norm)) return '\u0627\u0628\u0648';
 
-                w = w
-                    .replace(/أ/g, 'ا')
-                    .replace(/إ/g, 'ا')
-                    .replace(/ك/g, 'ک')
-                    .replace(/ي/g, 'ی')
-                    .replace(/ى/g, 'ی')
-                    .replace(/ه$/, 'ہ');
+                // Determine if ال on this word should be kept:
+                //   - after ابو/ابي (kunya):  ابو الحسن → ابو الحسن
+                //   - after عبد (compound):   عبد الله / عبد الكريم → عبد اللہ / عبد الکریم
+                const prevNorm = i > 0 ? normaliseAlef(words[i - 1]) : '';
+                const keepAl = /^\u0627\u0628[\u0648\u064A]$/.test(prevNorm) ||  // ابو/ابي
+                               /^\u0639\u0628\u062F$/.test(prevNorm);              // عبد
 
-                return w;
+                let w = keepAl ? norm : norm.replace(/^\u0627\u0644/, '');
+
+                return charConvert(w);
             }).join(' ').replace(/\s+/g, ' ').trim();
         }
 
