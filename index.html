@@ -1435,7 +1435,7 @@
                     if(!fmt.active) return;
                     switch(fmt.id) {
                         case 'title':     if(book.title)     elements.push(`<strong class="text-primary">${book.title}</strong>`); break;
-                        case 'publisher': if(book.publisher) elements.push(`مطبوعة ${book.publisher}`); break;
+                        case 'publisher': if(book.publisher) elements.push(book.publisher.includes('\u0645\u062E\u0637\u0648\u0637') ? book.publisher : `\u0645\u0637\u0628\u0648\u0639\u0629 ${book.publisher}`); break;
                         case 'place':     if(book.place)     elements.push(book.place); break;
                         case 'edition':   if(book.edition)   elements.push(book.edition); break;
                         case 'pubyear':   if(book.pubYear)   elements.push(toArabicDigits(book.pubYear)); break;
@@ -1534,7 +1534,7 @@
                     if(!fmt.active) return;
                     switch(fmt.id) {
                         case 'title': if(book.title) elements.push(book.title); break;
-                        case 'publisher': if(book.publisher) elements.push(`مطبوعة ${book.publisher}`); break;
+                        case 'publisher': if(book.publisher) elements.push(book.publisher.includes('\u0645\u062E\u0637\u0648\u0637') ? book.publisher : `\u0645\u0637\u0628\u0648\u0639\u0629 ${book.publisher}`); break;
                         case 'place': if(book.place) elements.push(book.place); break;
                         case 'edition': if(book.edition) elements.push(book.edition); break;
                         case 'pubyear': if(book.pubYear) elements.push(toArabicDigits(book.pubYear)); break;
@@ -1566,7 +1566,7 @@
                     if(!fmt.active) return;
                     switch(fmt.id) {
                         case 'title': if(book.title) elements.push(`<strong>${book.title}</strong>`); break;
-                        case 'publisher': if(book.publisher) elements.push(`مطبوعة ${book.publisher}`); break;
+                        case 'publisher': if(book.publisher) elements.push(book.publisher.includes('\u0645\u062E\u0637\u0648\u0637') ? book.publisher : `\u0645\u0637\u0628\u0648\u0639\u0629 ${book.publisher}`); break;
                         case 'place': if(book.place) elements.push(book.place); break;
                         case 'edition': if(book.edition) elements.push(book.edition); break;
                         case 'pubyear': if(book.pubYear) elements.push(toArabicDigits(book.pubYear)); break;
@@ -1635,7 +1635,7 @@
                         if (vp) citationElements.push(vp);
                         break;
                     case 'hadith': if(dynData.hadith) citationElements.push(`رقم: ${dynData.hadith}`); break;
-                    case 'publisher': if(book.publisher) citationElements.push(`مطبوعة ${book.publisher}`); break;
+                    case 'publisher': if(book.publisher) citationElements.push(book.publisher.includes('\u0645\u062E\u0637\u0648\u0637') ? book.publisher : `\u0645\u0637\u0628\u0648\u0639\u0629 ${book.publisher}`); break;
                     case 'place': if(book.place) citationElements.push(book.place); break;
                     case 'edition': if(book.edition) citationElements.push(book.edition); break;
                     case 'pubyear': if(book.pubYear) citationElements.push(toArabicDigits(book.pubYear)); break;
