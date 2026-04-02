@@ -2112,15 +2112,15 @@
                 };
 
                 const headers = parseLine(lines[0]);
-                let importedCount = 0, skippedCount = 0;
                 document.getElementById('cloud-syncing').classList.remove('hidden');
 
-                // Build a lookup Set for instant duplicate detection — much faster than searching the full array each time
-                const existingKeys = new Set(books.map(b => `${b.title}|${b.publisher}|${b.edition}`));
+                // Build a lookup Map for instant duplicate detection — key → existing book object (for upsert)
+                const existingMap = new Map(books.map(b => [`${b.title}|${b.publisher}|${b.edition}`, b]));
 
                 // Using Batch writes to completely prevent freezing
                 let batch = writeBatch(db);
                 let opCount = 0;
+                let importedCount = 0, updatedCount = 0, skippedCount = 0;
 
                 for (let i = 1; i < lines.length; i++) {
                     if (!lines[i].trim()) continue;
@@ -2136,28 +2136,38 @@
 
                     const publisher = getVal('Publisher');
                     const edition = getVal('Edition');
-
-                    // Fast O(1) duplicate check using the Set built above
-                    if (existingKeys.has(`${title}|${publisher}|${edition}`)) {
-                        skippedCount++; continue;
-                    }
-
-                    const newId = generateId();
-                    const bookData = {
-                        id: newId,
-                        title: title,
+                    const csvData = {
                         authorName: getVal('Author'),
-                        deathYear: getVal('Death Year'),
-                        publisher: publisher,
-                        place: getVal('Place'),
-                        edition: edition,
-                        pubYear: getVal('Publication Year')
+                        deathYear:  getVal('Death Year'),
+                        publisher:  publisher,
+                        place:      getVal('Place'),
+                        edition:    edition,
+                        pubYear:    getVal('Publication Year')
                     };
 
-                    const bookRef = doc(db, 'artifacts', appId, 'public', 'data', 'books', newId);
-                    batch.set(bookRef, bookData);
-                    importedCount++;
-                    opCount++;
+                    const existingBook = existingMap.get(`${title}|${publisher}|${edition}`);
+
+                    if (existingBook) {
+                        // Upsert: update any field the CSV has that differs from what's stored
+                        const updateData = {};
+                        for (const [field, csvVal] of Object.entries(csvData)) {
+                            if (csvVal && csvVal !== existingBook[field]) updateData[field] = csvVal;
+                        }
+                        if (Object.keys(updateData).length > 0) {
+                            const bookRef = doc(db, 'artifacts', appId, 'public', 'data', 'books', existingBook.id);
+                            batch.update(bookRef, updateData);
+                            updatedCount++; opCount++;
+                        } else {
+                            skippedCount++;
+                        }
+                    } else {
+                        // New book — insert
+                        const newId = generateId();
+                        const bookRef = doc(db, 'artifacts', appId, 'public', 'data', 'books', newId);
+                        batch.set(bookRef, { id: newId, title, ...csvData });
+                        importedCount++; opCount++;
+                        existingMap.set(`${title}|${publisher}|${edition}`, { id: newId, title, ...csvData });
+                    }
 
                     // Firestore limit is 500 per batch. Chunking at 450 to be safe.
                     if (opCount >= 450) {
@@ -2178,7 +2188,7 @@
                 }
                 
                 document.getElementById('cloud-syncing').classList.add('hidden');
-                showToast(`Cloud Upload Complete. ${importedCount} added. ${skippedCount} skipped.`);
+                showToast(`Import Complete — ${importedCount} added, ${updatedCount} updated, ${skippedCount} unchanged.`);
                 e.target.value = ''; 
             };
             reader.readAsText(file, 'utf-8');
