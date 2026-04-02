@@ -78,6 +78,7 @@
 
         /* Book search dropdown */
         #book-dropdown { border-top: none; border-radius: 0 0 8px 8px; }
+        #nav-tabs::-webkit-scrollbar { display: none; }
         #book-dropdown .book-option:hover { background-color: #f0fdf4; }
         #book-dropdown .book-option { border-bottom: 1px solid #f3f4f6; cursor: pointer; transition: background 0.15s; }
 
@@ -130,32 +131,42 @@
             </div>
         </div>
         
-        <!-- Navigation Tabs — always visible -->
-        <div id="nav-tabs" class="flex container mx-auto px-4 items-end gap-1 md:gap-2 text-sm md:text-base bg-primary text-white border-t border-green-800 overflow-x-auto whitespace-nowrap pt-1">
-            <button onclick="window.switchTab('home')" id="tab-home" class="py-2 px-3 tab-active hover:text-gold transition-colors flex flex-col items-center leading-tight">
-                <span><i class="fa-solid fa-house mr-1"></i> Home</span>
-                <span class="font-urdu text-xs opacity-70">ہوم</span>
-            </button>
-            <button onclick="window.switchTab('citation')" id="tab-citation" class="py-2 px-3 tab-inactive hover:text-gold transition-colors flex flex-col items-center leading-tight">
-                <span><i class="fa-solid fa-feather-pointed mr-1"></i> Citation Builder</span>
-                <span class="font-urdu text-xs opacity-70">حوالہ ساز</span>
-            </button>
-            <button onclick="window.switchTab('database')" id="tab-database" class="py-2 px-3 tab-inactive hover:text-gold transition-colors flex flex-col items-center leading-tight">
-                <span><i class="fa-solid fa-database mr-1"></i> Library</span>
-                <span class="font-urdu text-xs opacity-70">کتب خانہ</span>
-            </button>
-            <button onclick="window.switchTab('bibliography')" id="tab-bibliography" class="py-2 px-3 tab-inactive hover:text-gold transition-colors flex flex-col items-center leading-tight">
-                <span><i class="fa-solid fa-list-ol mr-1"></i> Bibliography</span>
-                <span class="font-urdu text-xs opacity-70">مصادر و مراجع</span>
-            </button>
-            <button onclick="window.switchTab('style')" id="tab-style" class="py-2 px-3 tab-inactive hover:text-gold transition-colors flex flex-col items-center leading-tight">
-                <span><i class="fa-solid fa-pen-ruler mr-1"></i> Formatting</span>
-                <span class="font-urdu text-xs opacity-70">ترتیب</span>
-            </button>
-            <button onclick="window.openSettings()" id="tab-settings" class="py-2 px-3 tab-inactive hover:text-gold transition-colors ml-auto flex flex-col items-center leading-tight">
-                <span><i class="fa-solid fa-gear mr-1"></i> Admin Panel</span>
-                <span class="font-urdu text-xs opacity-70">انتظامیہ</span>
-            </button>
+        <!-- Navigation Tabs — always visible, with scroll overflow indicators -->
+        <div class="relative border-t border-green-800 bg-primary">
+            <!-- Left fade + chevron (hidden when scrolled to start) -->
+            <div id="nav-indicator-left" class="hidden pointer-events-none absolute left-0 top-0 bottom-0 w-10 z-10 flex items-center justify-start pl-1.5" style="background:linear-gradient(to right,#1a4a1a 30%,transparent)">
+                <i class="fa-solid fa-chevron-left text-white/80 text-xs drop-shadow"></i>
+            </div>
+            <!-- Right fade + chevron (shown when there is overflow to the right) -->
+            <div id="nav-indicator-right" class="hidden pointer-events-none absolute right-0 top-0 bottom-0 w-10 z-10 flex items-center justify-end pr-1.5" style="background:linear-gradient(to left,#1a4a1a 30%,transparent)">
+                <i class="fa-solid fa-chevron-right text-white/80 text-xs drop-shadow"></i>
+            </div>
+            <div id="nav-tabs" class="flex items-end gap-1 md:gap-2 text-sm md:text-base text-white overflow-x-auto whitespace-nowrap pt-1 px-4 scroll-smooth" style="scrollbar-width:none;-ms-overflow-style:none;">
+                <button onclick="window.switchTab('home')" id="tab-home" class="py-2 px-3 tab-active hover:text-gold transition-colors flex flex-col items-center leading-tight flex-shrink-0">
+                    <span><i class="fa-solid fa-house mr-1"></i> Home</span>
+                    <span class="font-urdu text-xs opacity-70">ہوم</span>
+                </button>
+                <button onclick="window.switchTab('citation')" id="tab-citation" class="py-2 px-3 tab-inactive hover:text-gold transition-colors flex flex-col items-center leading-tight flex-shrink-0">
+                    <span><i class="fa-solid fa-feather-pointed mr-1"></i> Citation Builder</span>
+                    <span class="font-urdu text-xs opacity-70">حوالہ ساز</span>
+                </button>
+                <button onclick="window.switchTab('database')" id="tab-database" class="py-2 px-3 tab-inactive hover:text-gold transition-colors flex flex-col items-center leading-tight flex-shrink-0">
+                    <span><i class="fa-solid fa-database mr-1"></i> Library</span>
+                    <span class="font-urdu text-xs opacity-70">کتب خانہ</span>
+                </button>
+                <button onclick="window.switchTab('bibliography')" id="tab-bibliography" class="py-2 px-3 tab-inactive hover:text-gold transition-colors flex flex-col items-center leading-tight flex-shrink-0">
+                    <span><i class="fa-solid fa-list-ol mr-1"></i> Bibliography</span>
+                    <span class="font-urdu text-xs opacity-70">مصادر و مراجع</span>
+                </button>
+                <button onclick="window.switchTab('style')" id="tab-style" class="py-2 px-3 tab-inactive hover:text-gold transition-colors flex flex-col items-center leading-tight flex-shrink-0">
+                    <span><i class="fa-solid fa-pen-ruler mr-1"></i> Formatting</span>
+                    <span class="font-urdu text-xs opacity-70">ترتیب</span>
+                </button>
+                <button onclick="window.openSettings()" id="tab-settings" class="py-2 px-3 tab-inactive hover:text-gold transition-colors ml-auto flex flex-col items-center leading-tight flex-shrink-0">
+                    <span><i class="fa-solid fa-gear mr-1"></i> Admin Panel</span>
+                    <span class="font-urdu text-xs opacity-70">انتظامیہ</span>
+                </button>
+            </div>
         </div>
     </header>
 
@@ -1181,6 +1192,15 @@
         // ==========================================
         // UI & NAVIGATION LOGIC
         // ==========================================
+        function updateNavIndicators() {
+            const nav = document.getElementById('nav-tabs');
+            const left  = document.getElementById('nav-indicator-left');
+            const right = document.getElementById('nav-indicator-right');
+            if (!nav || !left || !right) return;
+            left.classList.toggle('hidden',  nav.scrollLeft <= 2);
+            right.classList.toggle('hidden', nav.scrollLeft + nav.clientWidth >= nav.scrollWidth - 2);
+        }
+
         function switchTab(tabName) {
             ['home', 'citation', 'database', 'bibliography', 'style', 'settings'].forEach(id => {
                 document.getElementById(`view-${id}`).classList.add('hidden');
@@ -1195,7 +1215,11 @@
             document.getElementById(`view-${tabName}`).classList.add('block');
 
             const tabBtn = document.getElementById(`tab-${tabName}`);
-            if(tabBtn) { tabBtn.classList.remove('tab-inactive'); tabBtn.classList.add('tab-active'); }
+            if(tabBtn) {
+                tabBtn.classList.remove('tab-inactive'); tabBtn.classList.add('tab-active');
+                tabBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+            }
+            setTimeout(updateNavIndicators, 150);
         }
 
         function startCitationMode(mode) {
@@ -2404,6 +2428,14 @@
                 dropdown.classList.add('hidden');
             }
         });
+
+        // Nav scroll overflow indicators
+        const _navEl = document.getElementById('nav-tabs');
+        if (_navEl) {
+            _navEl.addEventListener('scroll', updateNavIndicators);
+            window.addEventListener('resize', updateNavIndicators);
+            setTimeout(updateNavIndicators, 300); // initial check after render
+        }
         window.openBookModal = openBookModal;
         window.closeBookModal = closeBookModal;
         window.saveBook = saveBook;
