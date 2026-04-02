@@ -81,6 +81,10 @@
         #nav-tabs::-webkit-scrollbar { display: none; }
         #book-dropdown .book-option:hover { background-color: #f0fdf4; }
         #book-dropdown .book-option { border-bottom: 1px solid #f3f4f6; cursor: pointer; transition: background 0.15s; }
+        .db-filter-btn { background:#f9fafb; border-color:#e5e7eb; color:#6b7280; }
+        .db-filter-btn:hover { background:#f0fdf4; border-color:#86efac; color:#166534; }
+        .db-filter-active { background:#166534 !important; border-color:#166534 !important; color:#fff !important; }
+        .db-missing { background:#fef9c3 !important; }
 
         /* Tile Hover Effects */
         .tile-hover { transition: all 0.3s ease; }
@@ -391,19 +395,34 @@
                         </span>
                     </div>
                 </div>
-                <div class="mb-4 relative">
+                <div class="mb-3 relative">
                     <i class="fa-solid fa-search absolute left-3 top-3.5 text-gray-400"></i>
                     <input type="text" id="search-db" onkeyup="window.renderDatabaseTable()" placeholder="Search library by book title, author, publisher..." class="w-full border border-gray-300 rounded-md py-2.5 pl-10 pr-3 bg-gray-50 focus:ring-2 focus:ring-primary outline-none shadow-sm">
                 </div>
+
+                <!-- Filter bar — shown to admin/manager only -->
+                <div id="db-filter-bar" class="hidden mb-3 flex flex-wrap gap-1.5 items-center">
+                    <span class="text-xs font-semibold text-gray-500 mr-1"><i class="fa-solid fa-filter mr-1"></i>Filter:</span>
+                    <button onclick="window.setDbFilter('all')"           id="dbf-all"        class="db-filter-btn db-filter-active text-xs px-2.5 py-1 rounded-full border font-semibold transition">All</button>
+                    <button onclick="window.setDbFilter('no-author')"     id="dbf-no-author"   class="db-filter-btn text-xs px-2.5 py-1 rounded-full border font-semibold transition">Missing Author</button>
+                    <button onclick="window.setDbFilter('no-death')"      id="dbf-no-death"    class="db-filter-btn text-xs px-2.5 py-1 rounded-full border font-semibold transition">Missing Death Year</button>
+                    <button onclick="window.setDbFilter('no-publisher')"  id="dbf-no-publisher"class="db-filter-btn text-xs px-2.5 py-1 rounded-full border font-semibold transition">Missing Publisher</button>
+                    <button onclick="window.setDbFilter('no-place')"      id="dbf-no-place"    class="db-filter-btn text-xs px-2.5 py-1 rounded-full border font-semibold transition">Missing Place</button>
+                    <button onclick="window.setDbFilter('no-edition')"    id="dbf-no-edition"  class="db-filter-btn text-xs px-2.5 py-1 rounded-full border font-semibold transition">Missing Edition</button>
+                    <button onclick="window.setDbFilter('no-pubyear')"    id="dbf-no-pubyear"  class="db-filter-btn text-xs px-2.5 py-1 rounded-full border font-semibold transition">Missing Pub Year</button>
+                    <button onclick="window.setDbFilter('incomplete')"    id="dbf-incomplete"  class="db-filter-btn text-xs px-2.5 py-1 rounded-full border font-semibold transition">Any Field Missing</button>
+                    <span id="db-filter-count" class="text-xs text-gray-400 ml-auto font-mono"></span>
+                </div>
+
                 <div class="overflow-x-auto rounded-md border border-gray-200 shadow-sm">
-                    <table class="w-full text-left whitespace-nowrap">
+                    <table class="w-full whitespace-nowrap" dir="rtl">
                         <thead class="bg-primary text-white text-sm">
                             <tr id="db-table-header-row">
-                                <th class="p-3 font-semibold text-right">Book Title</th>
-                                <th class="p-3 font-semibold text-right">Author</th>
-                                <th class="p-3 font-semibold text-right">Publisher</th>
+                                <th class="p-3 font-semibold">Book Title</th>
+                                <th class="p-3 font-semibold">Author</th>
+                                <th class="p-3 font-semibold">Publisher</th>
                                 <th class="p-3 text-center font-semibold w-24">Year/Ed</th>
-                                <!-- Admin Column added dynamically -->
+                                <!-- Actions column added dynamically -->
                             </tr>
                         </thead>
                         <tbody id="db-table-body" class="divide-y text-sm"></tbody>
@@ -918,6 +937,7 @@
         let isAdminLoggedIn = false;
         let isManagerLoggedIn = false;
         let currentManagerName = '';
+        let dbFilter = 'all'; // active column filter in the library table
         let appMode = 'general';
         let postLoginTab = 'citation'; // where to navigate after successful login
         let textIntroRaw = "";
@@ -1786,7 +1806,9 @@
             const addBookBtn = document.getElementById('db-add-book-btn');
             const statusBar = document.getElementById('db-manager-status');
             const nameSpan = document.getElementById('db-manager-name');
+            const filterBar = document.getElementById('db-filter-bar');
             if (!loginBtn || !statusBar) return;
+            const hasAccess = isAdminLoggedIn || isManagerLoggedIn;
             if (isAdminLoggedIn) {
                 loginBtn.classList.add('hidden');
                 if (addBookBtn) addBookBtn.classList.remove('hidden');
@@ -1801,6 +1823,18 @@
                 if (addBookBtn) addBookBtn.classList.add('hidden');
                 statusBar.classList.add('hidden'); statusBar.classList.remove('flex');
             }
+            if (filterBar) {
+                filterBar.classList.toggle('hidden', !hasAccess);
+                filterBar.classList.toggle('flex', hasAccess);
+            }
+        }
+
+        function setDbFilter(filter) {
+            dbFilter = filter;
+            document.querySelectorAll('.db-filter-btn').forEach(b => b.classList.remove('db-filter-active'));
+            const btn = document.getElementById(`dbf-${filter}`);
+            if (btn) btn.classList.add('db-filter-active');
+            renderDatabaseTable();
         }
 
         function addAdmin() {
@@ -2328,18 +2362,38 @@
                 (b.publisher && normaliseForSearch(b.publisher).includes(searchTerm))
             );
             filteredBooks.sort((a, b) => a.title.localeCompare(b.title));
-            
-            filteredBooks.forEach(book => {
+
+            const filterMap = {
+                'no-author':    b => !b.authorName,
+                'no-death':     b => !b.deathYear,
+                'no-publisher': b => !b.publisher,
+                'no-place':     b => !b.place,
+                'no-edition':   b => !b.edition,
+                'no-pubyear':   b => !b.pubYear,
+                'incomplete':   b => !b.authorName || !b.deathYear || !b.publisher || !b.place || !b.edition || !b.pubYear,
+            };
+            const filterFn = filterMap[dbFilter];
+            const displayBooks = filterFn ? filteredBooks.filter(filterFn) : filteredBooks;
+
+            const countEl = document.getElementById('db-filter-count');
+            if (countEl) countEl.textContent = dbFilter !== 'all' ? `${displayBooks.length} of ${books.length}` : `${books.length} books`;
+
+            const miss = 'db-missing';
+            displayBooks.forEach(book => {
                 const tr = document.createElement('tr');
                 tr.className = "hover:bg-blue-50/50 border-b border-gray-200 transition-colors";
-                
+
+                const authorMiss = !book.authorName ? miss : '';
+                const pubMiss    = !book.publisher  ? miss : '';
+                const metaMiss   = (!book.edition || !book.pubYear) ? miss : '';
+
                 let html = `
                     <td class="p-4 font-bold text-primary font-arabic text-right rtl-input" dir="rtl">${book.title || '-'}</td>
-                    <td class="p-4 text-sm text-gray-700 font-arabic text-right rtl-input font-bold" dir="rtl">${book.authorName || '-'}</td>
-                    <td class="p-4 text-sm text-gray-600 font-arabic text-right rtl-input" dir="rtl">${book.publisher || '-'}</td>
-                    <td class="p-4 text-center text-xs text-gray-600 font-arabic font-bold bg-gray-50 border-l border-gray-200" dir="rtl">${[book.edition, book.pubYear].filter(Boolean).join(' - ') || '-'}</td>
+                    <td class="p-4 text-sm text-gray-700 font-arabic text-right rtl-input font-bold ${authorMiss}" dir="rtl">${book.authorName || '-'}</td>
+                    <td class="p-4 text-sm text-gray-600 font-arabic text-right rtl-input ${pubMiss}" dir="rtl">${book.publisher || '-'}</td>
+                    <td class="p-4 text-center text-xs text-gray-600 font-arabic font-bold bg-gray-50 border-l border-gray-200 ${metaMiss}" dir="rtl">${[book.edition, book.pubYear].filter(Boolean).join(' - ') || '-'}</td>
                 `;
-                
+
                 if (isAdminLoggedIn || isManagerLoggedIn) {
                     html += `
                     <td class="p-4 text-center border-l border-gray-200 bg-gray-50/50">
@@ -2347,12 +2401,12 @@
                         <button onclick="window.deleteBook('${book.id}')" class="text-red-500 hover:text-red-700 bg-white border border-red-200 p-2 rounded shadow-sm transition-transform hover:scale-110" title="Delete Book"><i class="fa-solid fa-trash"></i></button>
                     </td>`;
                 }
-                
+
                 tr.innerHTML = html;
                 tbody.appendChild(tr);
             });
-            
-            if (filteredBooks.length === 0) {
+
+            if (displayBooks.length === 0) {
                 const cols = (isAdminLoggedIn || isManagerLoggedIn) ? 5 : 4;
                 tbody.innerHTML = `<tr><td colspan="${cols}" class="p-8 text-center text-gray-400 font-bold"><i class="fa-solid fa-cloud text-3xl mb-3 block text-gray-300"></i> No books found in the Cloud Library.</td></tr>`;
             }
@@ -2436,6 +2490,7 @@
         window.removeBibItem = removeBibItem;
         window.sortBibliography = sortBibliography;
         window.renderDatabaseTable = renderDatabaseTable;
+        window.setDbFilter = setDbFilter;
         window.showBookDropdown = showBookDropdown;
         window.filterBookDropdown = filterBookDropdown;
         window.clearBookSelection = clearBookSelection;
