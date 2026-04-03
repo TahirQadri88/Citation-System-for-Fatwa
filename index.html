@@ -414,19 +414,29 @@
                     <span id="db-filter-count" class="text-xs text-gray-400 ml-auto font-mono"></span>
                 </div>
 
-                <div class="overflow-x-auto rounded-md border border-gray-200 shadow-sm">
-                    <table class="w-full whitespace-nowrap" dir="rtl">
-                        <thead class="bg-primary text-white text-sm">
-                            <tr id="db-table-header-row">
-                                <th class="p-3 font-semibold sticky right-0 bg-primary z-10 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.25)]">Book Title</th>
-                                <th class="p-3 font-semibold">Author</th>
-                                <th class="p-3 font-semibold">Publisher</th>
-                                <th class="p-3 text-center font-semibold w-24">Year/Ed</th>
-                                <!-- Actions column added dynamically -->
-                            </tr>
-                        </thead>
-                        <tbody id="db-table-body" class="divide-y text-sm"></tbody>
-                    </table>
+                <div class="relative">
+                    <!-- Mirror scrollbar — top -->
+                    <div id="db-scroll-mirror" class="overflow-x-auto mb-1" style="height:14px; scrollbar-width:thin; scrollbar-color:#9ca3af #f3f4f6">
+                        <div id="db-scroll-spacer" style="height:1px; min-width:100%"></div>
+                    </div>
+                    <!-- Scroll overflow indicators -->
+                    <div id="db-ind-left"  class="hidden absolute left-0  top-[14px] bottom-0 w-10 pointer-events-none z-20 bg-gradient-to-r from-white/70 to-transparent flex items-center justify-start pl-1"><i class="fa-solid fa-chevron-left text-gray-400 text-xs"></i></div>
+                    <div id="db-ind-right" class="hidden absolute right-0 top-[14px] bottom-0 w-10 pointer-events-none z-20 bg-gradient-to-l from-white/70 to-transparent flex items-center justify-end pr-1"><i class="fa-solid fa-chevron-right text-gray-400 text-xs"></i></div>
+                    <!-- Main table -->
+                    <div id="db-table-scroll" class="overflow-x-auto rounded-md border border-gray-200 shadow-sm">
+                        <table class="w-full whitespace-nowrap" dir="rtl">
+                            <thead class="bg-primary text-white text-sm">
+                                <tr id="db-table-header-row">
+                                    <th class="p-3 font-semibold sticky right-0 bg-primary z-10 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.25)]">Book Title</th>
+                                    <th class="p-3 font-semibold">Author</th>
+                                    <th class="p-3 font-semibold">Publisher</th>
+                                    <th class="p-3 text-center font-semibold w-24">Year/Ed</th>
+                                    <!-- Actions column added dynamically -->
+                                </tr>
+                            </thead>
+                            <tbody id="db-table-body" class="divide-y text-sm"></tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1215,6 +1225,44 @@
         // ==========================================
         // UI & NAVIGATION LOGIC
         // ==========================================
+        // ---- Library table mirrored scrollbar + overflow indicators ----
+        let _dbScrollInited = false;
+        function initDbScrollMirror() {
+            const mirror = document.getElementById('db-scroll-mirror');
+            const main   = document.getElementById('db-table-scroll');
+            const spacer = document.getElementById('db-scroll-spacer');
+            const indL   = document.getElementById('db-ind-left');
+            const indR   = document.getElementById('db-ind-right');
+            if (!mirror || !main || !spacer) return;
+
+            function updateIndicators() {
+                if (!indL || !indR) return;
+                indL.classList.toggle('hidden', main.scrollLeft <= 2);
+                indR.classList.toggle('hidden', main.scrollLeft + main.clientWidth >= main.scrollWidth - 2);
+            }
+
+            // Sync spacer width to table scroll width
+            spacer.style.width = main.scrollWidth + 'px';
+
+            if (!_dbScrollInited) {
+                _dbScrollInited = true;
+                let _sync = false;
+                mirror.addEventListener('scroll', () => {
+                    if (_sync) return; _sync = true;
+                    main.scrollLeft = mirror.scrollLeft;
+                    updateIndicators();
+                    _sync = false;
+                });
+                main.addEventListener('scroll', () => {
+                    if (_sync) return; _sync = true;
+                    mirror.scrollLeft = main.scrollLeft;
+                    updateIndicators();
+                    _sync = false;
+                });
+            }
+            updateIndicators();
+        }
+
         let _navIndicatorRaf = null;
         function updateNavIndicators() {
             if (_navIndicatorRaf) return; // already scheduled this frame
@@ -2410,6 +2458,8 @@
                 const cols = (isAdminLoggedIn || isManagerLoggedIn) ? 5 : 4;
                 tbody.innerHTML = `<tr><td colspan="${cols}" class="p-8 text-center text-gray-400 font-bold"><i class="fa-solid fa-cloud text-3xl mb-3 block text-gray-300"></i> No books found in the Cloud Library.</td></tr>`;
             }
+
+            requestAnimationFrame(initDbScrollMirror);
         }
 
         // ==========================================
