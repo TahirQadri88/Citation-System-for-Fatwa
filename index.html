@@ -1235,29 +1235,24 @@
             const indR   = document.getElementById('db-ind-right');
             if (!mirror || !main || !spacer) return;
 
+            spacer.style.width = main.scrollWidth + 'px';
+
             function updateIndicators() {
                 if (!indL || !indR) return;
                 indL.classList.toggle('hidden', main.scrollLeft <= 2);
                 indR.classList.toggle('hidden', main.scrollLeft + main.clientWidth >= main.scrollWidth - 2);
             }
 
-            // Sync spacer width to table scroll width
-            spacer.style.width = main.scrollWidth + 'px';
-
             if (!_dbScrollInited) {
                 _dbScrollInited = true;
-                let _sync = false;
+                // Only set scrollLeft if different — prevents the echo bounce loop
                 mirror.addEventListener('scroll', () => {
-                    if (_sync) return; _sync = true;
-                    main.scrollLeft = mirror.scrollLeft;
+                    if (main.scrollLeft !== mirror.scrollLeft) main.scrollLeft = mirror.scrollLeft;
                     updateIndicators();
-                    _sync = false;
                 });
                 main.addEventListener('scroll', () => {
-                    if (_sync) return; _sync = true;
-                    mirror.scrollLeft = main.scrollLeft;
+                    if (mirror.scrollLeft !== main.scrollLeft) mirror.scrollLeft = main.scrollLeft;
                     updateIndicators();
-                    _sync = false;
                 });
             }
             updateIndicators();
