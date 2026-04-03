@@ -87,6 +87,10 @@
         .db-missing { background:#fef9c3 !important; }
 
         /* Library scroll slider */
+        @media (max-width: 639px) {
+            #db-table-scroll th.sticky,
+            #db-table-scroll td.sticky { position: static !important; box-shadow: none !important; }
+        }
         #db-scroll-range { appearance:none; -webkit-appearance:none; background:transparent; width:100%; }
         #db-scroll-range::-webkit-slider-runnable-track { height:8px; border-radius:4px; background:linear-gradient(to right,#166534 var(--pct,0%),#d1fae5 var(--pct,0%)); border:1px solid #86efac; }
         #db-scroll-range::-moz-range-track    { height:8px; border-radius:4px; background:#d1fae5; border:1px solid #86efac; }
