@@ -1221,16 +1221,18 @@
         // UI & NAVIGATION LOGIC
         // ==========================================
         // ---- Library table top range slider ----
-        // max is always 100; pixel math happens at event time when layout is ready.
-        // Setting range.value never fires oninput — zero loop risk.
         function initDbTopScrollbar() {
-            const main = document.getElementById('db-table-scroll');
-            const range = document.getElementById('db-scroll-range');
-            if (!main || !range) return;
-            main.onscroll = () => {
-                const overflow = main.scrollWidth - main.clientWidth;
-                range.value = overflow > 0 ? (main.scrollLeft / overflow) * 100 : 0;
-            };
+            setTimeout(() => {
+                const main  = document.getElementById('db-table-scroll');
+                const range = document.getElementById('db-scroll-range');
+                if (!main || !range) return;
+                function syncRange() {
+                    const ov = main.scrollWidth - main.clientWidth;
+                    range.value = ov > 0 ? Math.round((main.scrollLeft / ov) * 100) : 0;
+                }
+                syncRange();            // set thumb to wherever browser actually scrolled to
+                main.onscroll = syncRange;
+            }, 0);
         }
 
         let _navIndicatorRaf = null;
