@@ -414,12 +414,11 @@
                     <span id="db-filter-count" class="text-xs text-gray-400 ml-auto font-mono"></span>
                 </div>
 
-                <!-- Scroll controls — top -->
-                <div class="flex justify-between items-center mb-1 px-0.5">
-                    <button onclick="document.getElementById('db-table-scroll').scrollBy({left:-240,behavior:'smooth'})" class="text-xs text-gray-500 hover:text-primary bg-gray-100 hover:bg-green-50 border border-gray-200 px-3 py-1 rounded-full transition"><i class="fa-solid fa-chevron-left mr-1"></i>Scroll</button>
-                    <button onclick="document.getElementById('db-table-scroll').scrollBy({left:240,behavior:'smooth'})"  class="text-xs text-gray-500 hover:text-primary bg-gray-100 hover:bg-green-50 border border-gray-200 px-3 py-1 rounded-full transition">Scroll<i class="fa-solid fa-chevron-right ml-1"></i></button>
+                <!-- Top scrollbar mirror -->
+                <div id="db-scroll-top" class="overflow-x-auto mb-1" style="scrollbar-width:thin;scrollbar-color:#9ca3af #f1f5f9;-webkit-overflow-scrolling:touch">
+                    <div id="db-scroll-spacer" style="height:10px;min-width:100%"></div>
                 </div>
-                <div id="db-table-scroll" class="overflow-x-auto rounded-md border border-gray-200 shadow-sm">
+                <div id="db-table-scroll" class="overflow-x-auto rounded-md border border-gray-200 shadow-sm" style="-webkit-overflow-scrolling:touch">
                     <table class="w-full whitespace-nowrap" dir="rtl">
                         <thead class="bg-primary text-white text-sm">
                             <tr id="db-table-header-row">
@@ -432,11 +431,6 @@
                         </thead>
                         <tbody id="db-table-body" class="divide-y text-sm"></tbody>
                     </table>
-                </div>
-                <!-- Scroll controls — bottom -->
-                <div class="flex justify-between items-center mt-1 px-0.5">
-                    <button onclick="document.getElementById('db-table-scroll').scrollBy({left:-240,behavior:'smooth'})" class="text-xs text-gray-500 hover:text-primary bg-gray-100 hover:bg-green-50 border border-gray-200 px-3 py-1 rounded-full transition"><i class="fa-solid fa-chevron-left mr-1"></i>Scroll</button>
-                    <button onclick="document.getElementById('db-table-scroll').scrollBy({left:240,behavior:'smooth'})"  class="text-xs text-gray-500 hover:text-primary bg-gray-100 hover:bg-green-50 border border-gray-200 px-3 py-1 rounded-full transition">Scroll<i class="fa-solid fa-chevron-right ml-1"></i></button>
                 </div>
             </div>
         </div>
@@ -1225,6 +1219,32 @@
         // ==========================================
         // UI & NAVIGATION LOGIC
         // ==========================================
+        // ---- Library table top scrollbar mirror ----
+        let _dbTopScrollInited = false;
+        function initDbTopScrollbar() {
+            const top    = document.getElementById('db-scroll-top');
+            const main   = document.getElementById('db-table-scroll');
+            const spacer = document.getElementById('db-scroll-spacer');
+            if (!top || !main || !spacer) return;
+            // Always keep spacer width in sync with table content width
+            spacer.style.width = main.scrollWidth + 'px';
+            if (_dbTopScrollInited) return;
+            _dbTopScrollInited = true;
+            let syncing = false;
+            top.addEventListener('scroll', () => {
+                if (syncing) return;
+                syncing = true;
+                main.scrollLeft = top.scrollLeft;
+                requestAnimationFrame(() => { syncing = false; });
+            });
+            main.addEventListener('scroll', () => {
+                if (syncing) return;
+                syncing = true;
+                top.scrollLeft = main.scrollLeft;
+                requestAnimationFrame(() => { syncing = false; });
+            });
+        }
+
         let _navIndicatorRaf = null;
         function updateNavIndicators() {
             if (_navIndicatorRaf) return; // already scheduled this frame
@@ -2420,7 +2440,7 @@
                 const cols = (isAdminLoggedIn || isManagerLoggedIn) ? 5 : 4;
                 tbody.innerHTML = `<tr><td colspan="${cols}" class="p-8 text-center text-gray-400 font-bold"><i class="fa-solid fa-cloud text-3xl mb-3 block text-gray-300"></i> No books found in the Cloud Library.</td></tr>`;
             }
-
+            requestAnimationFrame(initDbTopScrollbar);
         }
 
         // ==========================================
