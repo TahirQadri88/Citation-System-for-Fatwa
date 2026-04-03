@@ -418,7 +418,7 @@
                     <table class="w-full whitespace-nowrap" dir="rtl">
                         <thead class="bg-primary text-white text-sm">
                             <tr id="db-table-header-row">
-                                <th class="p-3 font-semibold">Book Title</th>
+                                <th class="p-3 font-semibold sticky right-0 bg-primary z-10 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.25)]">Book Title</th>
                                 <th class="p-3 font-semibold">Author</th>
                                 <th class="p-3 font-semibold">Publisher</th>
                                 <th class="p-3 text-center font-semibold w-24">Year/Ed</th>
@@ -2347,7 +2347,7 @@
             const hasEditAccess = isAdminLoggedIn || isManagerLoggedIn;
             if(hasEditAccess && theadRow.cells.length === 4) {
                 const th = document.createElement('th');
-                th.className = "p-3 text-center font-bold text-yellow-400 bg-gray-900 border-l border-gray-700";
+                th.className = "p-3 text-center font-bold text-yellow-400 bg-gray-900 border-l border-gray-700 sticky left-0 z-10 shadow-[4px_0_6px_-2px_rgba(0,0,0,0.25)]";
                 th.innerHTML = isAdminLoggedIn ? "<i class='fa-solid fa-screwdriver-wrench mr-1'></i> Admin Actions" : "<i class='fa-solid fa-user-pen mr-1'></i> Actions";
                 theadRow.appendChild(th);
             } else if (!hasEditAccess && theadRow.cells.length === 5) {
@@ -2388,7 +2388,7 @@
                 const metaMiss   = (!book.edition || !book.pubYear) ? miss : '';
 
                 let html = `
-                    <td class="p-4 font-bold text-primary font-arabic text-right rtl-input" dir="rtl">${book.title || '-'}</td>
+                    <td class="p-4 font-bold text-primary font-arabic text-right rtl-input sticky right-0 bg-white z-[1] shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.08)]" dir="rtl">${book.title || '-'}</td>
                     <td class="p-4 text-sm text-gray-700 font-arabic text-right rtl-input font-bold ${authorMiss}" dir="rtl">${book.authorName || '-'}</td>
                     <td class="p-4 text-sm text-gray-600 font-arabic text-right rtl-input ${pubMiss}" dir="rtl">${book.publisher || '-'}</td>
                     <td class="p-4 text-center text-xs text-gray-600 font-arabic font-bold bg-gray-50 border-l border-gray-200 ${metaMiss}" dir="rtl">${[book.edition, book.pubYear].filter(Boolean).join(' - ') || '-'}</td>
@@ -2396,7 +2396,7 @@
 
                 if (isAdminLoggedIn || isManagerLoggedIn) {
                     html += `
-                    <td class="p-4 text-center border-l border-gray-200 bg-gray-50/50">
+                    <td class="p-4 text-center border-l border-gray-200 bg-gray-50 sticky left-0 z-[1] shadow-[4px_0_6px_-2px_rgba(0,0,0,0.08)]">
                         <button onclick="window.openBookModal('${book.id}')" class="text-blue-500 hover:text-blue-700 bg-white border border-blue-200 p-2 rounded mr-2 shadow-sm transition-transform hover:scale-110" title="Edit Book"><i class="fa-solid fa-pen"></i></button>
                         <button onclick="window.deleteBook('${book.id}')" class="text-red-500 hover:text-red-700 bg-white border border-red-200 p-2 rounded shadow-sm transition-transform hover:scale-110" title="Delete Book"><i class="fa-solid fa-trash"></i></button>
                     </td>`;
