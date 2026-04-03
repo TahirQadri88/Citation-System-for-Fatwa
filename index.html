@@ -414,11 +414,11 @@
                     <span id="db-filter-count" class="text-xs text-gray-400 ml-auto font-mono"></span>
                 </div>
 
-                <!-- Top scroll slider (drag to scroll — no sync loop possible) -->
-                <input id="db-scroll-range" type="range" min="0" value="0" step="1"
+                <!-- Top scroll slider -->
+                <input id="db-scroll-range" type="range" min="0" max="100" value="0" step="1"
                        class="w-full mb-1 cursor-pointer accent-primary"
                        style="height:14px"
-                       oninput="document.getElementById('db-table-scroll').scrollLeft=this.value">
+                       oninput="var m=document.getElementById('db-table-scroll');m.scrollLeft=(this.value/100)*(m.scrollWidth-m.clientWidth)">
                 <div id="db-table-scroll" class="overflow-x-auto rounded-md border border-gray-200 shadow-sm" style="-webkit-overflow-scrolling:touch">
                     <table class="w-full whitespace-nowrap" dir="rtl">
                         <thead class="bg-primary text-white text-sm">
@@ -1221,16 +1221,16 @@
         // UI & NAVIGATION LOGIC
         // ==========================================
         // ---- Library table top range slider ----
-        // oninput on the range sets scrollLeft directly — no loop possible.
-        // On each render we update max and keep thumb in sync with scroll.
+        // max is always 100; pixel math happens at event time when layout is ready.
+        // Setting range.value never fires oninput — zero loop risk.
         function initDbTopScrollbar() {
+            const main = document.getElementById('db-table-scroll');
             const range = document.getElementById('db-scroll-range');
-            const main  = document.getElementById('db-table-scroll');
-            if (!range || !main) return;
-            range.max   = Math.max(0, main.scrollWidth - main.clientWidth);
-            range.value = main.scrollLeft;
-            // Keep thumb position updated when user scrolls the table directly
-            main.onscroll = () => { range.value = main.scrollLeft; };
+            if (!main || !range) return;
+            main.onscroll = () => {
+                const overflow = main.scrollWidth - main.clientWidth;
+                range.value = overflow > 0 ? (main.scrollLeft / overflow) * 100 : 0;
+            };
         }
 
         let _navIndicatorRaf = null;
@@ -2428,7 +2428,7 @@
                 const cols = (isAdminLoggedIn || isManagerLoggedIn) ? 5 : 4;
                 tbody.innerHTML = `<tr><td colspan="${cols}" class="p-8 text-center text-gray-400 font-bold"><i class="fa-solid fa-cloud text-3xl mb-3 block text-gray-300"></i> No books found in the Cloud Library.</td></tr>`;
             }
-            requestAnimationFrame(initDbTopScrollbar);
+            initDbTopScrollbar();
         }
 
         // ==========================================
