@@ -86,6 +86,16 @@
         .db-filter-active { background:#166534 !important; border-color:#166534 !important; color:#fff !important; }
         .db-missing { background:#fef9c3 !important; }
 
+        /* Library scroll slider */
+        #db-scroll-range { appearance:none; -webkit-appearance:none; background:transparent; width:100%; }
+        #db-scroll-range::-webkit-slider-runnable-track { height:8px; border-radius:4px; background:linear-gradient(to right,#166534 var(--pct,0%),#d1fae5 var(--pct,0%)); border:1px solid #86efac; }
+        #db-scroll-range::-moz-range-track    { height:8px; border-radius:4px; background:#d1fae5; border:1px solid #86efac; }
+        #db-scroll-range::-moz-range-progress { height:8px; border-radius:4px; background:#166634; }
+        #db-scroll-range::-webkit-slider-thumb { -webkit-appearance:none; width:20px; height:20px; border-radius:50%; background:#166534; border:2px solid #fff; box-shadow:0 1px 4px rgba(0,0,0,0.3); margin-top:-7px; cursor:grab; }
+        #db-scroll-range::-moz-range-thumb    { width:20px; height:20px; border-radius:50%; background:#166534; border:2px solid #fff; box-shadow:0 1px 4px rgba(0,0,0,0.3); cursor:grab; }
+        #db-scroll-range:active::-webkit-slider-thumb { cursor:grabbing; background:#14532d; }
+        #db-scroll-range:active::-moz-range-thumb     { cursor:grabbing; background:#14532d; }
+
         /* Tile Hover Effects */
         .tile-hover { transition: all 0.3s ease; }
         .tile-hover:hover { transform: translateY(-5px); box-shadow: 0 10px 25px -5px rgba(26, 74, 26, 0.3); }
@@ -416,9 +426,9 @@
 
                 <!-- Top scroll slider -->
                 <input id="db-scroll-range" type="range" min="0" max="100" value="0" step="1"
-                       class="w-full mb-1 cursor-pointer accent-primary"
-                       style="height:14px"
-                       oninput="var m=document.getElementById('db-table-scroll');m.scrollLeft=(this.value/100)*(m.scrollWidth-m.clientWidth)">
+                       class="w-full mb-2 cursor-pointer"
+                       style="height:18px; accent-color:#166534;"
+                       oninput="this.style.setProperty('--pct',this.value+'%');var m=document.getElementById('db-table-scroll');var ov=m.scrollWidth-m.clientWidth;if(ov>0)m.scrollLeft=(this.value/100)*ov">
                 <div id="db-table-scroll" class="overflow-x-auto rounded-md border border-gray-200 shadow-sm" style="-webkit-overflow-scrolling:touch">
                     <table class="w-full whitespace-nowrap" dir="rtl">
                         <thead class="bg-primary text-white text-sm">
@@ -1228,7 +1238,9 @@
                 if (!main || !range) return;
                 function syncRange() {
                     const ov = main.scrollWidth - main.clientWidth;
-                    range.value = ov > 0 ? Math.round((main.scrollLeft / ov) * 100) : 0;
+                    const pct = ov > 0 ? Math.round((main.scrollLeft / ov) * 100) : 0;
+                    range.value = pct;
+                    range.style.setProperty('--pct', pct + '%');
                 }
                 syncRange();            // set thumb to wherever browser actually scrolled to
                 main.onscroll = syncRange;
