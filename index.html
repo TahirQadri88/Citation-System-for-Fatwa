@@ -927,6 +927,13 @@
                 if(isAdminLoggedIn) { renderAdminSessions(); renderAdminUsers(); renderAdminSuperUsers(); renderAdminManagers(); }
             }, (error) => console.error("Users listener error:", error));
 
+            const managersRef = collection(db, 'artifacts', appId, 'public', 'data', 'managers');
+            onSnapshot(managersRef, (snapshot) => {
+                managers = [];
+                snapshot.forEach(docSnap => managers.push({ id: docSnap.id, ...docSnap.data() }));
+                if (isAdminLoggedIn) renderAdminManagers();
+            }, (error) => console.error("Managers listener error:", error));
+
             const sessionsRef = collection(db, 'artifacts', appId, 'public', 'data', 'app_sessions');
             onSnapshot(sessionsRef, (snapshot) => {
                 allAppSessions = [];
@@ -982,8 +989,7 @@
 
             const storedAdmins = localStorage.getItem('islamic_citation_admins_v9');
             if(storedAdmins) admins = JSON.parse(storedAdmins) || [{ username: 'Tahir', pwd: '7869' }];
-            const storedManagers = localStorage.getItem('islamic_citation_managers_v1');
-            if(storedManagers) managers = JSON.parse(storedManagers) || [];
+            // Managers now stored in Firestore (loaded via onSnapshot above)
 
             // v10: reset format order so رقم now appears before جلد/صفحه by default
             const storedFmt = localStorage.getItem('islamic_citation_format_v10');
@@ -999,7 +1005,7 @@
         function saveLocalData() {
             localStorage.setItem('islamic_citation_current_user_v9', JSON.stringify(currentUser));
             localStorage.setItem('islamic_citation_admins_v9', JSON.stringify(admins));
-            localStorage.setItem('islamic_citation_managers_v1', JSON.stringify(managers));
+            // managers saved to Firestore, not localStorage
             localStorage.setItem('islamic_citation_format_v10', JSON.stringify(formatSettings));
         }
 
@@ -1919,14 +1925,14 @@
             showToast(`Super User "${username}" removed`);
         }
 
-        function adminAddManager() {
+        async function adminAddManager() {
             const u = document.getElementById('new-manager-user').value.trim();
             const p = document.getElementById('new-manager-pwd').value;
             if (!u || p.length < 4) return showToast('Valid username and min 4 char password required', 'error');
             if (managers.find(m => m.username.toLowerCase() === u.toLowerCase())) return showToast('Manager username already exists', 'error');
             if (admins.find(a => a.username.toLowerCase() === u.toLowerCase())) return showToast('Username already used by a Super User', 'error');
-            managers.push({ username: u, pwd: p });
-            saveLocalData();
+            const docId = u.toLowerCase().replace(/\s+/g, '_');
+            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'managers', docId), { username: u, pwd: p });
             document.getElementById('new-manager-user').value = ''; document.getElementById('new-manager-pwd').value = '';
             renderAdminManagers();
             showToast(`Manager "${u}" added`);
@@ -1951,9 +1957,9 @@
             });
         }
 
-        function adminDeleteManager(username) {
-            managers = managers.filter(m => m.username !== username);
-            saveLocalData(); renderAdminManagers();
+        async function adminDeleteManager(username) {
+            const docId = username.toLowerCase().replace(/\s+/g, '_');
+            await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'managers', docId));
             showToast(`Manager "${username}" removed`);
         }
 
