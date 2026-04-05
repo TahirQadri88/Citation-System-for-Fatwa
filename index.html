@@ -927,6 +927,17 @@
                 if(isAdminLoggedIn) { renderAdminSessions(); renderAdminUsers(); renderAdminSuperUsers(); renderAdminManagers(); }
             }, (error) => console.error("Users listener error:", error));
 
+            const adminsRef = collection(db, 'artifacts', appId, 'public', 'data', 'admins');
+            onSnapshot(adminsRef, async (snapshot) => {
+                admins = [];
+                snapshot.forEach(docSnap => admins.push({ id: docSnap.id, ...docSnap.data() }));
+                // Seed protected developer account if Firestore collection is empty
+                if (admins.length === 0) {
+                    await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'admins', 'tahir'), { username: 'Tahir', pwd: '7869' });
+                }
+                if (isAdminLoggedIn) renderAdminSuperUsers();
+            }, (error) => console.error("Admins listener error:", error));
+
             const managersRef = collection(db, 'artifacts', appId, 'public', 'data', 'managers');
             onSnapshot(managersRef, (snapshot) => {
                 managers = [];
@@ -987,8 +998,7 @@
             const storedUser = localStorage.getItem('islamic_citation_current_user_v9');
             if(storedUser) currentUser = JSON.parse(storedUser);
 
-            const storedAdmins = localStorage.getItem('islamic_citation_admins_v9');
-            if(storedAdmins) admins = JSON.parse(storedAdmins) || [{ username: 'Tahir', pwd: '7869' }];
+            // Admins now stored in Firestore (loaded via onSnapshot below)
             // Managers now stored in Firestore (loaded via onSnapshot above)
 
             // v10: reset format order so رقم now appears before جلد/صفحه by default
@@ -1004,8 +1014,7 @@
 
         function saveLocalData() {
             localStorage.setItem('islamic_citation_current_user_v9', JSON.stringify(currentUser));
-            localStorage.setItem('islamic_citation_admins_v9', JSON.stringify(admins));
-            // managers saved to Firestore, not localStorage
+            // admins and managers saved to Firestore, not localStorage
             localStorage.setItem('islamic_citation_format_v10', JSON.stringify(formatSettings));
         }
 
@@ -1881,15 +1890,14 @@
             renderDatabaseTable();
         }
 
-        function addAdmin() {
+        async function addAdmin() {
             const u = document.getElementById('new-admin-user').value.trim();
             const p = document.getElementById('new-admin-pwd').value;
             if(!u || p.length < 4) return showToast('Valid username and min 4 char password required', 'error');
             if(admins.find(a => a.username.toLowerCase() === u.toLowerCase())) return showToast('Username already exists', 'error');
-            admins.push({ username: u, pwd: p });
-            saveLocalData();
+            const docId = u.toLowerCase().replace(/\s+/g, '_');
+            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'admins', docId), { username: u, pwd: p });
             document.getElementById('new-admin-user').value = ''; document.getElementById('new-admin-pwd').value = '';
-            renderAdminSuperUsers();
             showToast('New Super User successfully added');
         }
 
@@ -1922,19 +1930,20 @@
             });
         }
 
-        function adminChangeSuperUserPwd(username) {
+        async function adminChangeSuperUserPwd(username) {
             const newPwd = prompt(`New password for ${username} (min 4 chars):`);
             if (newPwd === null) return;
             if (newPwd.length < 4) return showToast('Password must be at least 4 characters', 'error');
-            const admin = admins.find(a => a.username === username);
-            if (admin) { admin.pwd = newPwd; saveLocalData(); renderAdminSuperUsers(); showToast(`Password updated for ${username}`); }
+            const docId = username.toLowerCase().replace(/\s+/g, '_');
+            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'admins', docId), { username, pwd: newPwd });
+            showToast(`Password updated for ${username}`);
         }
 
-        function adminDeleteSuperUser(username) {
+        async function adminDeleteSuperUser(username) {
             if (username.toLowerCase() === PROTECTED_ADMIN.toLowerCase()) return showToast('Developer account cannot be removed', 'error');
             if (admins.length <= 1) return showToast('Cannot remove the only Super User', 'error');
-            admins = admins.filter(a => a.username !== username);
-            saveLocalData(); renderAdminSuperUsers();
+            const docId = username.toLowerCase().replace(/\s+/g, '_');
+            await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'admins', docId));
             showToast(`Super User "${username}" removed`);
         }
 
