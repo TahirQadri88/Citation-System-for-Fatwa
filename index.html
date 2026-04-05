@@ -588,7 +588,7 @@
                             <div class="max-h-36 overflow-y-auto border border-gray-300 rounded-lg bg-white shadow-sm">
                                 <table class="w-full text-left text-sm">
                                     <thead class="bg-gray-100 text-gray-600 text-xs border-b border-gray-300">
-                                        <tr><th class="p-2 font-bold">Username</th><th class="p-2 text-center font-bold">Remove</th></tr>
+                                        <tr><th class="p-2 font-bold">Username</th><th class="p-2 text-center font-bold">Password</th><th class="p-2 text-center font-bold">Actions</th></tr>
                                     </thead>
                                     <tbody id="admin-superusers-table" class="divide-y divide-gray-100"></tbody>
                                 </table>
@@ -612,7 +612,7 @@
                             <div class="max-h-36 overflow-y-auto border border-gray-300 rounded-lg bg-white shadow-sm">
                                 <table class="w-full text-left text-sm">
                                     <thead class="bg-gray-100 text-gray-600 text-xs border-b border-gray-300">
-                                        <tr><th class="p-2 font-bold">Username</th><th class="p-2 text-center font-bold">Remove</th></tr>
+                                        <tr><th class="p-2 font-bold">Username</th><th class="p-2 text-center font-bold">Password</th><th class="p-2 text-center font-bold">Actions</th></tr>
                                     </thead>
                                     <tbody id="admin-managers-table" class="divide-y divide-gray-100"></tbody>
                                 </table>
@@ -1908,13 +1908,26 @@
                         <i class="fa-solid fa-shield-halved text-primary mr-1 text-xs"></i> ${a.username}
                         ${isProtected ? '<span class="ml-1 text-xs bg-yellow-100 text-yellow-700 border border-yellow-300 px-1.5 py-0.5 rounded font-bold"><i class="fa-solid fa-star text-yellow-500 mr-0.5"></i>Developer</span>' : ''}
                     </td>
-                    <td class="p-2 text-center">
-                        ${isProtected ? '<span class="text-xs text-gray-400 italic">Protected</span>' :
-                          isOnly ? '<span class="text-xs text-gray-400 italic">Cannot remove last</span>' :
+                    <td class="p-2 text-center font-mono text-xs">
+                        <span id="supwd-${a.username}" class="tracking-widest">••••</span>
+                        <button onclick="window.togglePwdView('supwd-${a.username}','${a.pwd}')" class="ml-1 text-gray-400 hover:text-gray-700" title="Show/hide password"><i class="fa-solid fa-eye text-xs"></i></button>
+                    </td>
+                    <td class="p-2 text-center flex gap-1 justify-center">
+                        <button onclick="window.adminChangeSuperUserPwd('${a.username}')" class="bg-blue-100 hover:bg-blue-200 text-blue-700 px-2 py-1 rounded text-xs font-bold transition" title="Change password"><i class="fa-solid fa-key"></i></button>
+                        ${isProtected ? '<span class="text-xs text-gray-400 italic px-1">Protected</span>' :
+                          isOnly    ? '<span class="text-xs text-gray-400 italic px-1">Last</span>' :
                           `<button onclick="window.adminDeleteSuperUser('${a.username}')" class="bg-red-100 hover:bg-red-200 text-red-700 px-2 py-1 rounded text-xs font-bold transition"><i class="fa-solid fa-trash-can"></i></button>`}
                     </td>`;
                 tbody.appendChild(tr);
             });
+        }
+
+        function adminChangeSuperUserPwd(username) {
+            const newPwd = prompt(`New password for ${username} (min 4 chars):`);
+            if (newPwd === null) return;
+            if (newPwd.length < 4) return showToast('Password must be at least 4 characters', 'error');
+            const admin = admins.find(a => a.username === username);
+            if (admin) { admin.pwd = newPwd; saveLocalData(); renderAdminSuperUsers(); showToast(`Password updated for ${username}`); }
         }
 
         function adminDeleteSuperUser(username) {
@@ -1943,18 +1956,38 @@
             if (!tbody) return;
             tbody.innerHTML = '';
             if (managers.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="2" class="p-3 text-center text-gray-400 text-xs italic">No managers added yet.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="3" class="p-3 text-center text-gray-400 text-xs italic">No managers added yet.</td></tr>`;
                 return;
             }
             managers.forEach(m => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td class="p-2 font-semibold text-gray-800"><i class="fa-solid fa-user-pen text-blue-500 mr-1 text-xs"></i> ${m.username}</td>
-                    <td class="p-2 text-center">
+                    <td class="p-2 text-center font-mono text-xs">
+                        <span id="mgpwd-${m.username}" class="tracking-widest">••••</span>
+                        <button onclick="window.togglePwdView('mgpwd-${m.username}','${m.pwd}')" class="ml-1 text-gray-400 hover:text-gray-700" title="Show/hide password"><i class="fa-solid fa-eye text-xs"></i></button>
+                    </td>
+                    <td class="p-2 text-center flex gap-1 justify-center">
+                        <button onclick="window.adminChangeManagerPwd('${m.username}')" class="bg-blue-100 hover:bg-blue-200 text-blue-700 px-2 py-1 rounded text-xs font-bold transition" title="Change password"><i class="fa-solid fa-key"></i></button>
                         <button onclick="window.adminDeleteManager('${m.username}')" class="bg-red-100 hover:bg-red-200 text-red-700 px-2 py-1 rounded text-xs font-bold transition"><i class="fa-solid fa-trash-can"></i></button>
                     </td>`;
                 tbody.appendChild(tr);
             });
+        }
+
+        async function adminChangeManagerPwd(username) {
+            const newPwd = prompt(`New password for ${username} (min 4 chars):`);
+            if (newPwd === null) return;
+            if (newPwd.length < 4) return showToast('Password must be at least 4 characters', 'error');
+            const docId = username.toLowerCase().replace(/\s+/g, '_');
+            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'managers', docId), { username, pwd: newPwd });
+            showToast(`Password updated for ${username}`);
+        }
+
+        function togglePwdView(spanId, pwd) {
+            const el = document.getElementById(spanId);
+            if (!el) return;
+            el.textContent = el.textContent === '••••' ? pwd : '••••';
         }
 
         async function adminDeleteManager(username) {
@@ -2470,9 +2503,12 @@
         window.addAdmin = addAdmin;
         window.renderAdminSuperUsers = renderAdminSuperUsers;
         window.adminDeleteSuperUser = adminDeleteSuperUser;
+        window.adminChangeSuperUserPwd = adminChangeSuperUserPwd;
         window.adminAddManager = adminAddManager;
         window.renderAdminManagers = renderAdminManagers;
         window.adminDeleteManager = adminDeleteManager;
+        window.adminChangeManagerPwd = adminChangeManagerPwd;
+        window.togglePwdView = togglePwdView;
         window.openManagerLogin = openManagerLogin;
         window.logoutManager = logoutManager;
 
