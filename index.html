@@ -1726,8 +1726,8 @@
             });
 
             const citationString = "(" + citationElements.join('، ') + ")";
-            textIntroRaw = toUrduDigits(introText);
-            textArabicRaw = toUrduDigits(citationString);
+            textIntroRaw = toUrduDigits(introText);   // Urdu intro → Urdu numerals ۱۲۳
+            textArabicRaw = toArabicDigits(citationString); // Arabic citation → Arabic-Indic ١٢٣
 
             document.getElementById('citation-placeholder').classList.add('hidden');
             document.getElementById('citation-container').classList.remove('hidden');
